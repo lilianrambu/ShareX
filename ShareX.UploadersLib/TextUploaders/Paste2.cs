@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -27,10 +27,25 @@ using System.Collections.Generic;
 
 namespace ShareX.UploadersLib.TextUploaders
 {
+    public class Paste2TextUploaderService : TextUploaderService
+    {
+        public override TextDestination EnumValue { get; } = TextDestination.Paste2;
+
+        public override bool CheckConfig(UploadersConfig config) => true;
+
+        public override GenericUploader CreateUploader(UploadersConfig config, TaskReferenceHelper taskInfo)
+        {
+            Paste2Settings settings = new Paste2Settings()
+            {
+                TextFormat = taskInfo.TextFormat
+            };
+
+            return new Paste2(settings);
+        }
+    }
+
     public sealed class Paste2 : TextUploader
     {
-        private const string APIURL = "http://paste2.org/new-paste";
-
         private Paste2Settings settings;
 
         public Paste2()
@@ -51,11 +66,12 @@ namespace ShareX.UploadersLib.TextUploaders
             {
                 Dictionary<string, string> arguments = new Dictionary<string, string>();
                 arguments.Add("code", text);
-                arguments.Add("description", settings.Description);
                 arguments.Add("lang", settings.TextFormat);
-                arguments.Add("parent", "0");
+                arguments.Add("description", settings.Description);
+                arguments.Add("parent", "");
 
-                ur.URL = SendRequest(HttpMethod.POST, APIURL, arguments, responseType: ResponseType.RedirectionURL);
+                SendRequestMultiPart("https://paste2.org/", arguments);
+                ur.URL = LastResponseInfo.ResponseURL;
             }
 
             return ur;
@@ -71,7 +87,7 @@ namespace ShareX.UploadersLib.TextUploaders
         public Paste2Settings()
         {
             TextFormat = "text";
-            Description = string.Empty;
+            Description = "";
         }
     }
 }

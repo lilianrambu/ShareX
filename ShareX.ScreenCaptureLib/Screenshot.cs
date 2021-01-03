@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -30,16 +30,16 @@ using System.Drawing.Imaging;
 
 namespace ShareX.ScreenCaptureLib
 {
-    public static partial class Screenshot
+    public partial class Screenshot
     {
-        public static bool RemoveOutsideScreenArea = true;
-        public static bool CaptureCursor = false;
-        public static bool CaptureClientArea = false;
-        public static bool CaptureShadow = true;
-        public static int ShadowOffset = 20;
-        public static bool AutoHideTaskbar = false;
+        public bool CaptureCursor { get; set; } = false;
+        public bool CaptureClientArea { get; set; } = false;
+        public bool RemoveOutsideScreenArea { get; set; } = true;
+        public bool CaptureShadow { get; set; } = false;
+        public int ShadowOffset { get; set; } = 20;
+        public bool AutoHideTaskbar { get; set; } = false;
 
-        public static Image CaptureRectangle(Rectangle rect)
+        public Bitmap CaptureRectangle(Rectangle rect)
         {
             if (RemoveOutsideScreenArea)
             {
@@ -50,14 +50,14 @@ namespace ShareX.ScreenCaptureLib
             return CaptureRectangleNative(rect, CaptureCursor);
         }
 
-        public static Image CaptureFullscreen()
+        public Bitmap CaptureFullscreen()
         {
             Rectangle bounds = CaptureHelpers.GetScreenBounds();
 
             return CaptureRectangle(bounds);
         }
 
-        public static Image CaptureWindow(IntPtr handle)
+        public Bitmap CaptureWindow(IntPtr handle)
         {
             if (handle.ToInt32() > 0)
             {
@@ -95,26 +95,27 @@ namespace ShareX.ScreenCaptureLib
             return null;
         }
 
-        public static Image CaptureActiveWindow()
+        public Bitmap CaptureActiveWindow()
         {
             IntPtr handle = NativeMethods.GetForegroundWindow();
 
             return CaptureWindow(handle);
         }
 
-        public static Image CaptureActiveMonitor()
+        public Bitmap CaptureActiveMonitor()
         {
             Rectangle bounds = CaptureHelpers.GetActiveScreenBounds();
 
             return CaptureRectangle(bounds);
         }
 
-        public static Image CaptureRectangleNative(Rectangle rect, bool captureCursor = false)
+        private Bitmap CaptureRectangleNative(Rectangle rect, bool captureCursor = false)
         {
-            return CaptureRectangleNative(NativeMethods.GetDesktopWindow(), rect, captureCursor);
+            IntPtr handle = NativeMethods.GetDesktopWindow();
+            return CaptureRectangleNative(handle, rect, captureCursor);
         }
 
-        public static Image CaptureRectangleNative(IntPtr handle, Rectangle rect, bool captureCursor = false)
+        private Bitmap CaptureRectangleNative(IntPtr handle, Rectangle rect, bool captureCursor = false)
         {
             if (rect.Width == 0 || rect.Height == 0)
             {
@@ -129,14 +130,10 @@ namespace ShareX.ScreenCaptureLib
 
             if (captureCursor)
             {
-                Point cursorOffset = CaptureHelpers.ScreenToClient(rect.Location);
-
                 try
                 {
-                    using (CursorData cursorData = new CursorData())
-                    {
-                        cursorData.DrawCursorToHandle(hdcDest, cursorOffset);
-                    }
+                    CursorData cursorData = new CursorData();
+                    cursorData.DrawCursor(hdcDest, rect.Location);
                 }
                 catch (Exception e)
                 {
@@ -147,28 +144,28 @@ namespace ShareX.ScreenCaptureLib
             NativeMethods.SelectObject(hdcDest, hOld);
             NativeMethods.DeleteDC(hdcDest);
             NativeMethods.ReleaseDC(handle, hdcSrc);
-            Image img = Image.FromHbitmap(hBitmap);
+            Bitmap bmp = Image.FromHbitmap(hBitmap);
             NativeMethods.DeleteObject(hBitmap);
 
-            return img;
+            return bmp;
         }
 
-        public static Image CaptureRectangleManaged(Rectangle rect)
+        private Bitmap CaptureRectangleManaged(Rectangle rect)
         {
             if (rect.Width == 0 || rect.Height == 0)
             {
                 return null;
             }
 
-            Image img = new Bitmap(rect.Width, rect.Height, PixelFormat.Format24bppRgb);
+            Bitmap bmp = new Bitmap(rect.Width, rect.Height, PixelFormat.Format24bppRgb);
 
-            using (Graphics g = Graphics.FromImage(img))
+            using (Graphics g = Graphics.FromImage(bmp))
             {
                 // Managed can't use SourceCopy | CaptureBlt because of .NET bug
                 g.CopyFromScreen(rect.Location, Point.Empty, rect.Size, CopyPixelOperation.SourceCopy);
             }
 
-            return img;
+            return bmp;
         }
     }
 }

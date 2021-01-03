@@ -30,7 +30,7 @@
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AfterUploadForm));
-            this.pbPreview = new HelpersLib.MyPictureBox();
+            this.pbPreview = new ShareX.HelpersLib.MyPictureBox();
             this.btnCopyImage = new System.Windows.Forms.Button();
             this.btnCopyLink = new System.Windows.Forms.Button();
             this.btnOpenLink = new System.Windows.Forms.Button();
@@ -38,7 +38,7 @@
             this.btnOpenFolder = new System.Windows.Forms.Button();
             this.tmrClose = new System.Windows.Forms.Timer(this.components);
             this.btnClose = new System.Windows.Forms.Button();
-            this.lvClipboardFormats = new HelpersLib.MyListView();
+            this.lvClipboardFormats = new ShareX.HelpersLib.MyListView();
             this.chDescription = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.chFormat = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.SuspendLayout();
@@ -46,12 +46,12 @@
             // pbPreview
             // 
             resources.ApplyResources(this.pbPreview, "pbPreview");
-            this.pbPreview.BackColor = System.Drawing.Color.White;
             this.pbPreview.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.pbPreview.DrawCheckeredBackground = true;
             this.pbPreview.EnableRightClickMenu = true;
             this.pbPreview.FullscreenOnClick = true;
             this.pbPreview.Name = "pbPreview";
+            this.pbPreview.ShowImageSizeLabel = true;
             // 
             // btnCopyImage
             // 
@@ -127,7 +127,10 @@
             // AfterUploadForm
             // 
             resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.BackColor = System.Drawing.SystemColors.Window;
+            this.CancelButton = this.btnClose;
             this.Controls.Add(this.lvClipboardFormats);
             this.Controls.Add(this.btnClose);
             this.Controls.Add(this.btnOpenLink);

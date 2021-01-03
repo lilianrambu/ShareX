@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -39,7 +39,7 @@ namespace ShareX.HelpersLib
 
         public static Rectangle GetScreenWorkingArea()
         {
-            return SystemInformation.WorkingArea;
+            return Screen.AllScreens.Select(x => x.WorkingArea).Combine();
         }
 
         public static Rectangle GetScreenBounds2()
@@ -76,12 +76,17 @@ namespace ShareX.HelpersLib
 
         public static Rectangle GetScreenBounds4()
         {
-            return Screen.AllScreens.Aggregate(Rectangle.Empty, (current, screen) => Rectangle.Union(current, screen.Bounds));
+            return Screen.AllScreens.Select(x => x.Bounds).Combine();
         }
 
         public static Rectangle GetActiveScreenBounds()
         {
             return Screen.FromPoint(GetCursorPosition()).Bounds;
+        }
+
+        public static Rectangle GetActiveScreenWorkingArea()
+        {
+            return Screen.FromPoint(GetCursorPosition()).WorkingArea;
         }
 
         public static Rectangle GetPrimaryScreenBounds()
@@ -184,9 +189,9 @@ namespace ShareX.HelpersLib
         {
             Color targetColor = GetPixelColor(x, y);
 
-            return targetColor.R.IsBetween(color.R - variation, color.R + variation) &&
-                   targetColor.G.IsBetween(color.G - variation, color.G + variation) &&
-                   targetColor.B.IsBetween(color.B - variation, color.B + variation);
+            return targetColor.R.IsBetween((byte)(color.R - variation), (byte)(color.R + variation)) &&
+                   targetColor.G.IsBetween((byte)(color.G - variation), (byte)(color.G + variation)) &&
+                   targetColor.B.IsBetween((byte)(color.B - variation), (byte)(color.B + variation));
         }
 
         public static Rectangle CreateRectangle(int x, int y, int x2, int y2)
@@ -219,28 +224,6 @@ namespace ShareX.HelpersLib
         public static Rectangle CreateRectangle(Point pos, Point pos2)
         {
             return CreateRectangle(pos.X, pos.Y, pos2.X, pos2.Y);
-        }
-
-        public static Rectangle FixRectangle(int x, int y, int width, int height)
-        {
-            if (width < 0)
-            {
-                x += width;
-                width = -width;
-            }
-
-            if (height < 0)
-            {
-                y += height;
-                height = -height;
-            }
-
-            return new Rectangle(x, y, width, height);
-        }
-
-        public static Rectangle FixRectangle(Rectangle rect)
-        {
-            return FixRectangle(rect.X, rect.Y, rect.Width, rect.Height);
         }
 
         public static Point ProportionalPosition(Point pos, Point pos2)
@@ -282,7 +265,49 @@ namespace ShareX.HelpersLib
             return newPosition;
         }
 
-        public static Rectangle GetWindowRectangle(IntPtr handle, bool maximizeFix = true)
+        public static Point SnapPositionToDegree(Point pos, Point pos2, float degree, float startDegree)
+        {
+            float angle = MathHelpers.LookAtRadian(pos, pos2);
+            float startAngle = MathHelpers.DegreeToRadian(startDegree);
+            float snapAngle = MathHelpers.DegreeToRadian(degree);
+            float newAngle = ((float)Math.Round((angle + startAngle) / snapAngle) * snapAngle) - startAngle;
+            float distance = MathHelpers.Distance(pos, pos2);
+            return (Point)(pos + MathHelpers.RadianToVector2(newAngle, distance));
+        }
+
+        public static Point CalculateNewPosition(Point posOnClick, Point posCurrent, Size size)
+        {
+            if (posCurrent.X > posOnClick.X)
+            {
+                if (posCurrent.Y > posOnClick.Y)
+                {
+                    return new Point(posOnClick.X + size.Width - 1, posOnClick.Y + size.Height - 1);
+                }
+                else
+                {
+                    return new Point(posOnClick.X + size.Width - 1, posOnClick.Y - size.Height + 1);
+                }
+            }
+            else
+            {
+                if (posCurrent.Y > posOnClick.Y)
+                {
+                    return new Point(posOnClick.X - size.Width + 1, posOnClick.Y + size.Height - 1);
+                }
+                else
+                {
+                    return new Point(posOnClick.X - size.Width + 1, posOnClick.Y - size.Height + 1);
+                }
+            }
+        }
+
+        public static Rectangle CalculateNewRectangle(Point posOnClick, Point posCurrent, Size size)
+        {
+            Point newPosition = CalculateNewPosition(posOnClick, posCurrent, size);
+            return CreateRectangle(posOnClick, newPosition);
+        }
+
+        public static Rectangle GetWindowRectangle(IntPtr handle)
         {
             Rectangle rect = Rectangle.Empty;
 
@@ -301,12 +326,45 @@ namespace ShareX.HelpersLib
                 rect = NativeMethods.GetWindowRect(handle);
             }
 
-            if (maximizeFix && NativeMethods.IsZoomed(handle))
+            if (!Helpers.IsWindows10OrGreater() && NativeMethods.IsZoomed(handle))
             {
                 rect = NativeMethods.MaximizedWindowFix(handle, rect);
             }
 
             return rect;
+        }
+
+        public static Rectangle GetActiveWindowRectangle()
+        {
+            IntPtr handle = NativeMethods.GetForegroundWindow();
+            return GetWindowRectangle(handle);
+        }
+
+        public static Rectangle GetActiveWindowClientRectangle()
+        {
+            IntPtr handle = NativeMethods.GetForegroundWindow();
+            return NativeMethods.GetClientRect(handle);
+        }
+
+        public static bool IsActiveWindowFullscreen()
+        {
+            IntPtr handle = NativeMethods.GetForegroundWindow();
+
+            if (handle.ToInt32() > 0)
+            {
+                WindowInfo windowInfo = new WindowInfo(handle);
+                string className = windowInfo.ClassName;
+                string[] ignoreList = new string[] { "Progman", "WorkerW" };
+
+                if (ignoreList.All(ignore => !className.Equals(ignore, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Rectangle windowRectangle = windowInfo.Rectangle;
+                    Rectangle monitorRectangle = Screen.FromRectangle(windowRectangle).Bounds;
+                    return windowRectangle.Contains(monitorRectangle);
+                }
+            }
+
+            return false;
         }
 
         public static Rectangle EvenRectangleSize(Rectangle rect)

@@ -123,13 +123,17 @@
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="lblProductName.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Microsoft Sans Serif, 14.25pt</value>
+    <value>Verdana, 14.25pt</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="lblProductName.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="lblProductName.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 8</value>
+    <value>12, 14</value>
   </data>
   <data name="lblProductName.Size" type="System.Drawing.Size, System.Drawing">
-    <value>0, 24</value>
+    <value>0, 23</value>
   </data>
   <data name="lblProductName.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -147,23 +151,23 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;lblProductName.ZOrder" xml:space="preserve">
-    <value>12</value>
+    <value>15</value>
   </data>
   <data name="lblBerk.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="lblBerk.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="lblBerk.Location" type="System.Drawing.Point, System.Drawing">
-    <value>89, 144</value>
+    <value>64, 163</value>
   </data>
   <data name="lblBerk.Size" type="System.Drawing.Size, System.Drawing">
-    <value>60, 13</value>
+    <value>0, 13</value>
   </data>
   <data name="lblBerk.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
   </data>
-  <data name="lblBerk.Text" xml:space="preserve">
-    <value>Jaex (Berk)</value>
-  <comment>@Invariant</comment></data>
   <data name="&gt;&gt;lblBerk.Name" xml:space="preserve">
     <value>lblBerk</value>
   </data>
@@ -174,23 +178,23 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;lblBerk.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>8</value>
   </data>
   <data name="lblMike.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="lblMike.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="lblMike.Location" type="System.Drawing.Point, System.Drawing">
-    <value>89, 168</value>
+    <value>64, 187</value>
   </data>
   <data name="lblMike.Size" type="System.Drawing.Size, System.Drawing">
-    <value>131, 13</value>
+    <value>0, 13</value>
   </data>
   <data name="lblMike.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
   </data>
-  <data name="lblMike.Text" xml:space="preserve">
-    <value>mcored (Michael Delpach)</value>
-  <comment>@Invariant</comment></data>
   <data name="&gt;&gt;lblMike.Name" xml:space="preserve">
     <value>lblMike</value>
   </data>
@@ -201,24 +205,20 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;lblMike.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>9</value>
+  </data>
+  <data name="rtbCredits.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Bottom, Left, Right</value>
   </data>
   <data name="rtbCredits.Location" type="System.Drawing.Point, System.Drawing">
-    <value>15, 200</value>
-  </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="rtbCredits.ScrollBars" type="System.Windows.Forms.RichTextBoxScrollBars, System.Windows.Forms">
-    <value>Vertical</value>
+    <value>15, 219</value>
   </data>
   <data name="rtbCredits.Size" type="System.Drawing.Size, System.Drawing">
-    <value>449, 234</value>
+    <value>560, 333</value>
   </data>
   <data name="rtbCredits.TabIndex" type="System.Int32, mscorlib">
-    <value>6</value>
+    <value>7</value>
   </data>
-  <data name="rtbCredits.Text" xml:space="preserve">
-    <value />
-  <comment>@Invariant</comment></data>
   <data name="rtbCredits.WordWrap" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
@@ -232,20 +232,17 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;rtbCredits.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>7</value>
   </data>
   <data name="rtbShareXInfo.Location" type="System.Drawing.Point, System.Drawing">
-    <value>15, 66</value>
+    <value>16, 80</value>
   </data>
   <data name="rtbShareXInfo.Size" type="System.Drawing.Size, System.Drawing">
-    <value>281, 48</value>
+    <value>368, 62</value>
   </data>
   <data name="rtbShareXInfo.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
   </data>
-  <data name="rtbShareXInfo.Text" xml:space="preserve">
-    <value />
-  <comment>@Invariant</comment></data>
   <data name="&gt;&gt;rtbShareXInfo.Name" xml:space="preserve">
     <value>rtbShareXInfo</value>
   </data>
@@ -256,130 +253,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;rtbShareXInfo.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>6</value>
   </data>
-  <data name="lblOwners.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="lblOwners.Location" type="System.Drawing.Point, System.Drawing">
-    <value>14, 117</value>
-  </data>
-  <data name="lblOwners.Size" type="System.Drawing.Size, System.Drawing">
-    <value>46, 13</value>
-  </data>
-  <data name="lblOwners.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
-  </data>
-  <data name="lblOwners.Text" xml:space="preserve">
-    <value>Owners:</value>
-  </data>
-  <data name="&gt;&gt;lblOwners.Name" xml:space="preserve">
-    <value>lblOwners</value>
-  </data>
-  <data name="&gt;&gt;lblOwners.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;lblOwners.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;lblOwners.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="cLogo.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Right</value>
-  </data>
-  <data name="cLogo.Location" type="System.Drawing.Point, System.Drawing">
-    <value>280, -8</value>
-  </data>
-  <data name="cLogo.Size" type="System.Drawing.Size, System.Drawing">
-    <value>200, 200</value>
-  </data>
-  <data name="cLogo.TabIndex" type="System.Int32, mscorlib">
-    <value>7</value>
-  </data>
-  <data name="&gt;&gt;cLogo.Name" xml:space="preserve">
-    <value>cLogo</value>
-  </data>
-  <data name="&gt;&gt;cLogo.Type" xml:space="preserve">
-    <value>ShareX.HelpersLib.Canvas, ShareX.HelpersLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;cLogo.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;cLogo.ZOrder" xml:space="preserve">
-    <value>13</value>
-  </data>
-  <data name="uclUpdate.Location" type="System.Drawing.Point, System.Drawing">
-    <value>13, 36</value>
-  </data>
-  <data name="uclUpdate.Size" type="System.Drawing.Size, System.Drawing">
-    <value>224, 24</value>
-  </data>
-  <data name="uclUpdate.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;uclUpdate.Name" xml:space="preserve">
-    <value>uclUpdate</value>
-  </data>
-  <data name="&gt;&gt;uclUpdate.Type" xml:space="preserve">
-    <value>ShareX.HelpersLib.UpdateCheckerLabel, ShareX.HelpersLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;uclUpdate.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;uclUpdate.ZOrder" xml:space="preserve">
-    <value>7</value>
-  </data>
-  <data name="pbMikeGooglePlus.Location" type="System.Drawing.Point, System.Drawing">
-    <value>64, 166</value>
-  </data>
-  <data name="pbMikeGooglePlus.Size" type="System.Drawing.Size, System.Drawing">
-    <value>16, 16</value>
-  </data>
-  <data name="pbMikeGooglePlus.SizeMode" type="System.Windows.Forms.PictureBoxSizeMode, System.Windows.Forms">
-    <value>StretchImage</value>
-  </data>
-  <data name="pbMikeGooglePlus.TabIndex" type="System.Int32, mscorlib">
-    <value>22</value>
-  </data>
-  <data name="&gt;&gt;pbMikeGooglePlus.Name" xml:space="preserve">
-    <value>pbMikeGooglePlus</value>
-  </data>
-  <data name="&gt;&gt;pbMikeGooglePlus.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;pbMikeGooglePlus.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;pbMikeGooglePlus.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="pbBerkSteamURL.Location" type="System.Drawing.Point, System.Drawing">
-    <value>65, 142</value>
-  </data>
-  <data name="pbBerkSteamURL.Size" type="System.Drawing.Size, System.Drawing">
-    <value>16, 16</value>
-  </data>
-  <data name="pbBerkSteamURL.SizeMode" type="System.Windows.Forms.PictureBoxSizeMode, System.Windows.Forms">
-    <value>CenterImage</value>
-  </data>
-  <data name="pbBerkSteamURL.TabIndex" type="System.Int32, mscorlib">
-    <value>21</value>
-  </data>
-  <data name="&gt;&gt;pbBerkSteamURL.Name" xml:space="preserve">
-    <value>pbBerkSteamURL</value>
-  </data>
-  <data name="&gt;&gt;pbBerkSteamURL.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;pbBerkSteamURL.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;pbBerkSteamURL.ZOrder" xml:space="preserve">
-    <value>4</value>
+  <data name="pbMikeURL.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="pbMikeURL.Location" type="System.Drawing.Point, System.Drawing">
-    <value>41, 166</value>
+    <value>41, 185</value>
   </data>
   <data name="pbMikeURL.Size" type="System.Drawing.Size, System.Drawing">
     <value>16, 16</value>
@@ -400,10 +280,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;pbMikeURL.ZOrder" xml:space="preserve">
-    <value>8</value>
+    <value>11</value>
+  </data>
+  <data name="pbAU.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="pbAU.Location" type="System.Drawing.Point, System.Drawing">
-    <value>17, 166</value>
+    <value>17, 185</value>
   </data>
   <data name="pbAU.Size" type="System.Drawing.Size, System.Drawing">
     <value>16, 16</value>
@@ -424,10 +307,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;pbAU.ZOrder" xml:space="preserve">
-    <value>9</value>
+    <value>12</value>
+  </data>
+  <data name="pbBerkURL.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="pbBerkURL.Location" type="System.Drawing.Point, System.Drawing">
-    <value>41, 142</value>
+    <value>41, 161</value>
   </data>
   <data name="pbBerkURL.Size" type="System.Drawing.Size, System.Drawing">
     <value>16, 16</value>
@@ -448,10 +334,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;pbBerkURL.ZOrder" xml:space="preserve">
-    <value>10</value>
+    <value>13</value>
+  </data>
+  <data name="pbTR.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="pbTR.Location" type="System.Drawing.Point, System.Drawing">
-    <value>17, 142</value>
+    <value>17, 161</value>
   </data>
   <data name="pbTR.Size" type="System.Drawing.Size, System.Drawing">
     <value>16, 16</value>
@@ -472,19 +361,259 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;pbTR.ZOrder" xml:space="preserve">
-    <value>11</value>
+    <value>14</value>
+  </data>
+  <data name="lblTeam.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="lblTeam.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="lblTeam.Location" type="System.Drawing.Point, System.Drawing">
+    <value>14, 136</value>
+  </data>
+  <data name="lblTeam.Size" type="System.Drawing.Size, System.Drawing">
+    <value>0, 13</value>
+  </data>
+  <data name="lblTeam.TabIndex" type="System.Int32, mscorlib">
+    <value>15</value>
+  </data>
+  <data name="&gt;&gt;lblTeam.Name" xml:space="preserve">
+    <value>lblTeam</value>
+  </data>
+  <data name="&gt;&gt;lblTeam.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;lblTeam.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;lblTeam.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="pbLogo.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Right</value>
+  </data>
+  <data name="pbLogo.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="pbLogo.Location" type="System.Drawing.Point, System.Drawing">
+    <value>376, 8</value>
+  </data>
+  <data name="pbLogo.Size" type="System.Drawing.Size, System.Drawing">
+    <value>200, 200</value>
+  </data>
+  <data name="pbLogo.SizeMode" type="System.Windows.Forms.PictureBoxSizeMode, System.Windows.Forms">
+    <value>Zoom</value>
+  </data>
+  <data name="pbLogo.TabIndex" type="System.Int32, mscorlib">
+    <value>18</value>
+  </data>
+  <data name="&gt;&gt;pbLogo.Name" xml:space="preserve">
+    <value>pbLogo</value>
+  </data>
+  <data name="&gt;&gt;pbLogo.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;pbLogo.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;pbLogo.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="btnClose.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Bottom, Right</value>
+  </data>
+  <data name="btnClose.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="btnClose.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="btnClose.Location" type="System.Drawing.Point, System.Drawing">
+    <value>472, 560</value>
+  </data>
+  <data name="btnClose.Size" type="System.Drawing.Size, System.Drawing">
+    <value>104, 24</value>
+  </data>
+  <data name="btnClose.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="btnClose.Text" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="&gt;&gt;btnClose.Name" xml:space="preserve">
+    <value>btnClose</value>
+  </data>
+  <data name="&gt;&gt;btnClose.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;btnClose.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;btnClose.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="btnShareXLicense.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Bottom, Right</value>
+  </data>
+  <data name="btnShareXLicense.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="btnShareXLicense.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="btnShareXLicense.Location" type="System.Drawing.Point, System.Drawing">
+    <value>152, 560</value>
+  </data>
+  <data name="btnShareXLicense.Size" type="System.Drawing.Size, System.Drawing">
+    <value>168, 24</value>
+  </data>
+  <data name="btnShareXLicense.TabIndex" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="btnShareXLicense.Text" xml:space="preserve">
+    <value>ShareX license...</value>
+  </data>
+  <data name="&gt;&gt;btnShareXLicense.Name" xml:space="preserve">
+    <value>btnShareXLicense</value>
+  </data>
+  <data name="&gt;&gt;btnShareXLicense.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;btnShareXLicense.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;btnShareXLicense.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="btnLicenses.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Bottom, Right</value>
+  </data>
+  <data name="btnLicenses.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="btnLicenses.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="btnLicenses.Location" type="System.Drawing.Point, System.Drawing">
+    <value>328, 560</value>
+  </data>
+  <data name="btnLicenses.Size" type="System.Drawing.Size, System.Drawing">
+    <value>136, 24</value>
+  </data>
+  <data name="btnLicenses.TabIndex" type="System.Int32, mscorlib">
+    <value>21</value>
+  </data>
+  <data name="btnLicenses.Text" xml:space="preserve">
+    <value>Licenses...</value>
+  </data>
+  <data name="&gt;&gt;btnLicenses.Name" xml:space="preserve">
+    <value>btnLicenses</value>
+  </data>
+  <data name="&gt;&gt;btnLicenses.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;btnLicenses.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;btnLicenses.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="uclUpdate.Location" type="System.Drawing.Point, System.Drawing">
+    <value>14, 41</value>
+  </data>
+  <data name="uclUpdate.Size" type="System.Drawing.Size, System.Drawing">
+    <value>224, 24</value>
+  </data>
+  <data name="uclUpdate.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;uclUpdate.Name" xml:space="preserve">
+    <value>uclUpdate</value>
+  </data>
+  <data name="&gt;&gt;uclUpdate.Type" xml:space="preserve">
+    <value>ShareX.HelpersLib.UpdateCheckerLabel, ShareX.HelpersLib, Version=13.1.1.0, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;uclUpdate.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;uclUpdate.ZOrder" xml:space="preserve">
+    <value>10</value>
+  </data>
+  <data name="cLogo.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Right</value>
+  </data>
+  <data name="cLogo.Location" type="System.Drawing.Point, System.Drawing">
+    <value>384, 0</value>
+  </data>
+  <data name="cLogo.Size" type="System.Drawing.Size, System.Drawing">
+    <value>200, 200</value>
+  </data>
+  <data name="cLogo.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="&gt;&gt;cLogo.Name" xml:space="preserve">
+    <value>cLogo</value>
+  </data>
+  <data name="&gt;&gt;cLogo.Type" xml:space="preserve">
+    <value>ShareX.HelpersLib.Canvas, ShareX.HelpersLib, Version=13.1.1.0, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;cLogo.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;cLogo.ZOrder" xml:space="preserve">
+    <value>16</value>
+  </data>
+  <data name="lblBuild.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="lblBuild.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 9.75pt</value>
+  </data>
+  <data name="lblBuild.Location" type="System.Drawing.Point, System.Drawing">
+    <value>13, 45</value>
+  </data>
+  <data name="lblBuild.Size" type="System.Drawing.Size, System.Drawing">
+    <value>38, 16</value>
+  </data>
+  <data name="lblBuild.TabIndex" type="System.Int32, mscorlib">
+    <value>22</value>
+  </data>
+  <data name="lblBuild.Text" xml:space="preserve">
+    <value>Build</value>
+  </data>
+  <data name="lblBuild.Visible" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="&gt;&gt;lblBuild.Name" xml:space="preserve">
+    <value>lblBuild</value>
+  </data>
+  <data name="&gt;&gt;lblBuild.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;lblBuild.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;lblBuild.ZOrder" xml:space="preserve">
+    <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
-    <value>6, 13</value>
+    <value>96, 96</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>473, 446</value>
+    <value>584, 593</value>
+  </data>
+  <data name="$this.MinimumSize" type="System.Drawing.Size, System.Drawing">
+    <value>600, 600</value>
   </data>
   <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
     <value>CenterScreen</value>
+  </data>
+  <data name="$this.Text" xml:space="preserve">
+    <value>ShareX - About</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>AboutForm</value>

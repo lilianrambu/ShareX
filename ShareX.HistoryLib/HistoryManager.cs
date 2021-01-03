@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,29 +24,54 @@
 #endregion License Information (GPL v3)
 
 using ShareX.HelpersLib;
+using ShareX.HistoryLib.Properties;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Windows.Forms;
 
 namespace ShareX.HistoryLib
 {
-    public class HistoryManager
+    public abstract class HistoryManager
     {
-        internal XMLManager Manager { get; private set; }
+        public string FilePath { get; private set; }
+        public string BackupFolder { get; set; }
+        public bool CreateBackup { get; set; }
+        public bool CreateWeeklyBackup { get; set; }
 
-        public HistoryManager(string historyPath)
+        public HistoryManager(string filePath)
         {
-            Manager = new XMLManager(historyPath);
+            FilePath = filePath;
+        }
+
+        public List<HistoryItem> GetHistoryItems()
+        {
+            try
+            {
+                return Load();
+            }
+            catch (Exception e)
+            {
+                DebugHelper.WriteException(e);
+
+                MessageBox.Show(Resources.ErrorOccuredWhileReadingHistoryFile + " " + FilePath + "\r\n\r\n" + e,
+                    "ShareX - " + Resources.HistoryManager_GetHistoryItems_Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            return new List<HistoryItem>();
         }
 
         public bool AppendHistoryItem(HistoryItem historyItem)
         {
+            return AppendHistoryItems(new HistoryItem[] { historyItem });
+        }
+
+        public bool AppendHistoryItems(IEnumerable<HistoryItem> historyItems)
+        {
             try
             {
-                if (historyItem != null && !string.IsNullOrEmpty(historyItem.Filename) && historyItem.DateTimeUtc != DateTime.MinValue &&
-                    (!string.IsNullOrEmpty(historyItem.URL) || !string.IsNullOrEmpty(historyItem.Filepath)))
-                {
-                    return Manager.Append(historyItem);
-                }
+                return Append(historyItems.Where(x => IsValidHistoryItem(x)));
             }
             catch (Exception e)
             {
@@ -56,27 +81,79 @@ namespace ShareX.HistoryLib
             return false;
         }
 
-        public List<HistoryItem> GetHistoryItems()
+        private bool IsValidHistoryItem(HistoryItem historyItem)
         {
-            try
-            {
-                return Manager.Load();
-            }
-            catch (Exception e)
-            {
-                DebugHelper.WriteException(e);
-            }
-
-            return new List<HistoryItem>();
+            return historyItem != null && !string.IsNullOrEmpty(historyItem.FileName) && historyItem.DateTime != DateTime.MinValue &&
+                (!string.IsNullOrEmpty(historyItem.URL) || !string.IsNullOrEmpty(historyItem.FilePath));
         }
 
-        public static void AddHistoryItemAsync(string historyPath, HistoryItem historyItem)
+        protected List<HistoryItem> Load()
         {
-            TaskEx.Run(() =>
+            return Load(FilePath);
+        }
+
+        protected abstract List<HistoryItem> Load(string filePath);
+
+        protected bool Append(IEnumerable<HistoryItem> historyItems)
+        {
+            return Append(FilePath, historyItems);
+        }
+
+        protected abstract bool Append(string filePath, IEnumerable<HistoryItem> historyItems);
+
+        protected void Backup(string filePath)
+        {
+            if (!string.IsNullOrEmpty(BackupFolder))
             {
-                HistoryManager history = new HistoryManager(historyPath);
-                history.AppendHistoryItem(historyItem);
-            });
+                if (CreateBackup)
+                {
+                    Helpers.CopyFile(filePath, BackupFolder);
+                }
+
+                if (CreateWeeklyBackup)
+                {
+                    Helpers.BackupFileWeekly(filePath, BackupFolder);
+                }
+            }
+        }
+
+        public void Test(int itemCount)
+        {
+            Test(FilePath, itemCount);
+        }
+
+        public void Test(string filePath, int itemCount)
+        {
+            HistoryItem historyItem = new HistoryItem()
+            {
+                FileName = "Example.png",
+                FilePath = @"C:\ShareX\Screenshots\Example.png",
+                DateTime = DateTime.Now,
+                Type = "Image",
+                Host = "Imgur",
+                URL = "https://example.com/Example.png",
+                ThumbnailURL = "https://example.com/Example.png",
+                DeletionURL = "https://example.com/Example.png",
+                ShortenedURL = "https://example.com/Example.png"
+            };
+
+            HistoryItem[] historyItems = new HistoryItem[itemCount];
+            for (int i = 0; i < itemCount; i++)
+            {
+                historyItems[i] = historyItem;
+            }
+
+            Thread.Sleep(1000);
+
+            DebugTimer saveTimer = new DebugTimer($"Saved {itemCount} items");
+            Append(filePath, historyItems);
+            saveTimer.WriteElapsedMilliseconds();
+
+            Thread.Sleep(1000);
+
+            DebugTimer loadTimer = new DebugTimer($"Loaded {itemCount} items");
+            Load(filePath);
+            loadTimer.WriteElapsedMilliseconds();
         }
     }
 }

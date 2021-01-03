@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -23,36 +23,65 @@
 
 #endregion License Information (GPL v3)
 
+// Credits: https://github.com/gpailler
+
 using CG.Web.MegaApiClient;
+using ShareX.UploadersLib.Properties;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace ShareX.UploadersLib.FileUploaders
 {
+    public class MegaFileUploaderService : FileUploaderService
+    {
+        public override FileDestination EnumValue { get; } = FileDestination.Mega;
+
+        public override Icon ServiceIcon => Resources.Mega;
+
+        public override bool CheckConfig(UploadersConfig config)
+        {
+            return config.MegaAuthInfos != null && config.MegaAuthInfos.Email != null && config.MegaAuthInfos.Hash != null &&
+                config.MegaAuthInfos.PasswordAesKey != null;
+        }
+
+        public override GenericUploader CreateUploader(UploadersConfig config, TaskReferenceHelper taskInfo)
+        {
+            return new Mega(config.MegaAuthInfos?.GetMegaApiClientAuthInfos(), config.MegaParentNodeId);
+        }
+
+        public override TabPage GetUploadersConfigTabPage(UploadersConfigForm form) => form.tpMega;
+    }
+
     public sealed class Mega : FileUploader, IWebClient
     {
-        private readonly MegaApiClient _megaClient;
-        private readonly MegaApiClient.AuthInfos _authInfos;
-        private readonly string _parentNodeId;
+        // Pack all chunks in a single upload fragment
+        // (by default, MegaApiClient splits files in 1MB fragments and do multiple uploads)
+        // It allows to have a consistent upload progression in ShareX
+        private const int UploadChunksPackSize = -1;
 
-        public Mega()
-            : this(null, null)
+        private readonly MegaApiClient megaClient;
+        private readonly MegaApiClient.AuthInfos authInfos;
+        private readonly string parentNodeId;
+
+        public Mega() : this(null, null)
         {
         }
 
-        public Mega(MegaApiClient.AuthInfos authInfos)
-            : this(authInfos, null)
+        public Mega(MegaApiClient.AuthInfos authInfos) : this(authInfos, null)
         {
         }
 
         public Mega(MegaApiClient.AuthInfos authInfos, string parentNodeId)
         {
             AllowReportProgress = false;
-            _megaClient = new MegaApiClient(this);
-            _authInfos = authInfos;
-            _parentNodeId = parentNodeId;
+            Options options = new Options(chunksPackSize: UploadChunksPackSize);
+            megaClient = new MegaApiClient(options, this);
+            this.authInfos = authInfos;
+            this.parentNodeId = parentNodeId;
         }
 
         public bool TryLogin()
@@ -70,22 +99,22 @@ namespace ShareX.UploadersLib.FileUploaders
 
         private void Login()
         {
-            if (_authInfos == null)
+            if (authInfos == null)
             {
-                _megaClient.LoginAnonymous();
+                megaClient.LoginAnonymous();
             }
             else
             {
-                _megaClient.Login(_authInfos);
+                megaClient.Login(authInfos);
             }
         }
 
         internal IEnumerable<DisplayNode> GetDisplayNodes()
         {
-            IEnumerable<Node> nodes = _megaClient.GetNodes().Where(n => n.Type == NodeType.Directory || n.Type == NodeType.Root).ToArray();
+            IEnumerable<INode> nodes = megaClient.GetNodes().Where(n => n.Type == NodeType.Directory || n.Type == NodeType.Root).ToArray();
             List<DisplayNode> displayNodes = new List<DisplayNode>();
 
-            foreach (Node node in nodes)
+            foreach (INode node in nodes)
             {
                 displayNodes.Add(new DisplayNode(node, nodes));
             }
@@ -96,25 +125,25 @@ namespace ShareX.UploadersLib.FileUploaders
             return displayNodes;
         }
 
-        public Node GetParentNode()
+        public INode GetParentNode()
         {
-            if (_authInfos == null || _parentNodeId == null)
+            if (authInfos == null || parentNodeId == null)
             {
-                return _megaClient.GetNodes().SingleOrDefault(n => n.Type == NodeType.Root);
+                return megaClient.GetNodes().SingleOrDefault(n => n.Type == NodeType.Root);
             }
 
-            return _megaClient.GetNodes().SingleOrDefault(n => n.Id == _parentNodeId);
+            return megaClient.GetNodes().SingleOrDefault(n => n.Id == parentNodeId);
         }
 
         public override UploadResult Upload(Stream stream, string fileName)
         {
             Login();
 
-            Node createdNode = _megaClient.Upload(stream, fileName, GetParentNode());
+            INode createdNode = megaClient.Upload(stream, fileName, GetParentNode());
 
             UploadResult res = new UploadResult();
             res.IsURLExpected = true;
-            res.URL = _megaClient.GetDownloadLink(createdNode).ToString();
+            res.URL = megaClient.GetDownloadLink(createdNode).ToString();
 
             return res;
         }
@@ -123,7 +152,7 @@ namespace ShareX.UploadersLib.FileUploaders
 
         public string PostRequestJson(Uri url, string jsonData)
         {
-            return SendRequestJSON(url.ToString(), jsonData);
+            return SendRequest(HttpMethod.POST, url.ToString(), jsonData, RequestHelpers.ContentTypeJSON);
         }
 
         public string PostRequestRaw(Uri url, Stream dataStream)
@@ -131,7 +160,7 @@ namespace ShareX.UploadersLib.FileUploaders
             try
             {
                 AllowReportProgress = true;
-                return SendRequestStream(url.ToString(), dataStream, "application/octet-stream");
+                return SendRequest(HttpMethod.POST, url.ToString(), dataStream, "application/octet-stream");
             }
             finally
             {
@@ -155,21 +184,21 @@ namespace ShareX.UploadersLib.FileUploaders
                 DisplayName = "[Select a folder]";
             }
 
-            public DisplayNode(Node node, IEnumerable<Node> nodes)
+            public DisplayNode(INode node, IEnumerable<INode> nodes)
             {
                 Node = node;
                 DisplayName = GenerateDisplayName(node, nodes);
             }
 
-            public Node Node { get; private set; }
+            public INode Node { get; private set; }
 
             public string DisplayName { get; private set; }
 
-            private string GenerateDisplayName(Node node, IEnumerable<Node> nodes)
+            private string GenerateDisplayName(INode node, IEnumerable<INode> nodes)
             {
                 List<string> nodesTree = new List<string>();
 
-                Node parent = node;
+                INode parent = node;
                 do
                 {
                     if (parent.Type == NodeType.Directory)

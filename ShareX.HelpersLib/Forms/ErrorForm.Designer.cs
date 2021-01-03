@@ -30,12 +30,12 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ErrorForm));
             this.txtException = new System.Windows.Forms.TextBox();
-            this.btnCopyAll = new System.Windows.Forms.Button();
             this.btnSendBugReport = new System.Windows.Forms.Button();
             this.btnClose = new System.Windows.Forms.Button();
             this.btnOpenLogFile = new System.Windows.Forms.Button();
             this.flpMenu = new System.Windows.Forms.FlowLayoutPanel();
             this.btnContinue = new System.Windows.Forms.Button();
+            this.btnOK = new System.Windows.Forms.Button();
             this.lblErrorMessage = new System.Windows.Forms.Label();
             this.flpMenu.SuspendLayout();
             this.SuspendLayout();
@@ -43,17 +43,8 @@
             // txtException
             // 
             resources.ApplyResources(this.txtException, "txtException");
-            this.txtException.BackColor = System.Drawing.Color.White;
             this.txtException.Name = "txtException";
             this.txtException.ReadOnly = true;
-            // 
-            // btnCopyAll
-            // 
-            this.btnCopyAll.BackColor = System.Drawing.Color.Transparent;
-            resources.ApplyResources(this.btnCopyAll, "btnCopyAll");
-            this.btnCopyAll.Name = "btnCopyAll";
-            this.btnCopyAll.UseVisualStyleBackColor = false;
-            this.btnCopyAll.Click += new System.EventHandler(this.btnCopyAll_Click);
             // 
             // btnSendBugReport
             // 
@@ -82,11 +73,11 @@
             // flpMenu
             // 
             resources.ApplyResources(this.flpMenu, "flpMenu");
-            this.flpMenu.Controls.Add(this.btnCopyAll);
-            this.flpMenu.Controls.Add(this.btnOpenLogFile);
             this.flpMenu.Controls.Add(this.btnSendBugReport);
-            this.flpMenu.Controls.Add(this.btnClose);
+            this.flpMenu.Controls.Add(this.btnOpenLogFile);
             this.flpMenu.Controls.Add(this.btnContinue);
+            this.flpMenu.Controls.Add(this.btnClose);
+            this.flpMenu.Controls.Add(this.btnOK);
             this.flpMenu.Name = "flpMenu";
             // 
             // btnContinue
@@ -97,6 +88,14 @@
             this.btnContinue.UseVisualStyleBackColor = false;
             this.btnContinue.Click += new System.EventHandler(this.btnContinue_Click);
             // 
+            // btnOK
+            // 
+            resources.ApplyResources(this.btnOK, "btnOK");
+            this.btnOK.BackColor = System.Drawing.Color.Transparent;
+            this.btnOK.Name = "btnOK";
+            this.btnOK.UseVisualStyleBackColor = false;
+            this.btnOK.Click += new System.EventHandler(this.btnOK_Click);
+            // 
             // lblErrorMessage
             // 
             resources.ApplyResources(this.lblErrorMessage, "lblErrorMessage");
@@ -106,7 +105,10 @@
             // 
             this.AcceptButton = this.btnContinue;
             resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.BackColor = System.Drawing.SystemColors.Window;
+            this.CancelButton = this.btnClose;
             this.Controls.Add(this.lblErrorMessage);
             this.Controls.Add(this.flpMenu);
             this.Controls.Add(this.txtException);
@@ -122,12 +124,12 @@
         #endregion Windows Form Designer generated code
 
         private System.Windows.Forms.TextBox txtException;
-        private System.Windows.Forms.Button btnCopyAll;
         private System.Windows.Forms.Button btnSendBugReport;
         private System.Windows.Forms.Button btnClose;
         private System.Windows.Forms.Button btnOpenLogFile;
         private System.Windows.Forms.FlowLayoutPanel flpMenu;
         private System.Windows.Forms.Button btnContinue;
         private System.Windows.Forms.Label lblErrorMessage;
+        private System.Windows.Forms.Button btnOK;
     }
 }

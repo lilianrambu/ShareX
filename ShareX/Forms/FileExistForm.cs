@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -41,7 +41,7 @@ namespace ShareX
         public FileExistForm(string filepath)
         {
             InitializeComponent();
-            Icon = ShareXResources.Icon;
+            ShareXResources.ApplyTheme(this);
 
             Filepath = filepath;
             filename = Path.GetFileNameWithoutExtension(Filepath);
@@ -53,7 +53,7 @@ namespace ShareX
 
         private void FileExistForm_Shown(object sender, EventArgs e)
         {
-            this.ShowActivate();
+            this.ForceActivate();
         }
 
         private string GetNewFilename()
@@ -65,10 +65,10 @@ namespace ShareX
                 return newFilename + Path.GetExtension(Filepath);
             }
 
-            return string.Empty;
+            return "";
         }
 
-        private void btnNewName_Click(object sender, EventArgs e)
+        private void UseNewFilename()
         {
             string newFilename = GetNewFilename();
 
@@ -79,11 +79,60 @@ namespace ShareX
             }
         }
 
+        private void UseUniqueFilename()
+        {
+            Filepath = uniqueFilepath;
+            Close();
+        }
+
+        private void Cancel()
+        {
+            Filepath = "";
+            Close();
+        }
+
         private void txtNewName_TextChanged(object sender, EventArgs e)
         {
             string newFilename = txtNewName.Text;
             btnNewName.Enabled = !string.IsNullOrEmpty(newFilename) && !newFilename.Equals(filename, StringComparison.InvariantCultureIgnoreCase);
             btnNewName.Text = Resources.FileExistForm_txtNewName_TextChanged_Use_new_name__ + GetNewFilename();
+        }
+
+        private void txtNewName_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyData == Keys.Enter || e.KeyData == Keys.Escape)
+            {
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void txtNewName_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyData == Keys.Enter)
+            {
+                string newFilename = txtNewName.Text;
+
+                if (!string.IsNullOrEmpty(newFilename))
+                {
+                    if (newFilename.Equals(filename, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        Close();
+                    }
+                    else
+                    {
+                        UseNewFilename();
+                    }
+                }
+            }
+            else if (e.KeyData == Keys.Escape)
+            {
+                Cancel();
+            }
+        }
+
+        private void btnNewName_Click(object sender, EventArgs e)
+        {
+            UseNewFilename();
         }
 
         private void btnOverwrite_Click(object sender, EventArgs e)
@@ -93,14 +142,12 @@ namespace ShareX
 
         private void btnUniqueName_Click(object sender, EventArgs e)
         {
-            Filepath = uniqueFilepath;
-            Close();
+            UseUniqueFilename();
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            Filepath = string.Empty;
-            Close();
+            Cancel();
         }
     }
 }

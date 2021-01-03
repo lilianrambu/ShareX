@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,16 +24,46 @@
 #endregion License Information (GPL v3)
 
 using Newtonsoft.Json;
+using ShareX.HelpersLib;
+using ShareX.UploadersLib.Properties;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
+using System.Windows.Forms;
 
 namespace ShareX.UploadersLib.FileUploaders
 {
-    public sealed class Pomf : FileUploader
+    public class PomfFileUploaderService : FileUploaderService
     {
+        public override FileDestination EnumValue { get; } = FileDestination.Pomf;
+
+        public override Icon ServiceIcon => Resources.Pomf;
+
+        public override bool CheckConfig(UploadersConfig config)
+        {
+            return config.PomfUploader != null && !string.IsNullOrEmpty(config.PomfUploader.UploadURL);
+        }
+
+        public override GenericUploader CreateUploader(UploadersConfig config, TaskReferenceHelper taskInfo)
+        {
+            return new Pomf(config.PomfUploader);
+        }
+
+        public override TabPage GetUploadersConfigTabPage(UploadersConfigForm form) => form.tpPomf;
+    }
+
+    public class Pomf : FileUploader
+    {
+        public PomfUploader Uploader { get; private set; }
+
+        public Pomf(PomfUploader uploader)
+        {
+            Uploader = uploader;
+        }
+
         public override UploadResult Upload(Stream stream, string fileName)
         {
-            UploadResult result = UploadData(stream, "https://pomf.se/upload.php", fileName, "files[]");
+            UploadResult result = SendRequestFile(Uploader.UploadURL, stream, fileName, "files[]");
 
             if (result.IsSuccess)
             {
@@ -41,21 +71,29 @@ namespace ShareX.UploadersLib.FileUploaders
 
                 if (response.success && response.files != null && response.files.Count > 0)
                 {
-                    result.URL = "https://a.pomf.se/" + response.files[0].url;
+                    string url = response.files[0].url;
+
+                    if (!URLHelpers.HasPrefix(url) && !string.IsNullOrEmpty(Uploader.ResultURL))
+                    {
+                        string resultURL = URLHelpers.FixPrefix(Uploader.ResultURL);
+                        url = URLHelpers.CombineURL(resultURL, url);
+                    }
+
+                    result.URL = url;
                 }
             }
 
             return result;
         }
 
-        internal class PomfResponse
+        private class PomfResponse
         {
             public bool success { get; set; }
             public object error { get; set; }
             public List<PomfFile> files { get; set; }
         }
 
-        internal class PomfFile
+        private class PomfFile
         {
             public string hash { get; set; }
             public string name { get; set; }

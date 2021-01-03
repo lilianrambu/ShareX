@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -42,22 +42,22 @@ namespace ShareX.HelpersLib
 
         public MyMessageBox(string text, string caption, MessageBoxButtons buttons = MessageBoxButtons.OK, string checkBoxText = null, bool isChecked = false)
         {
-            BackColor = Color.White;
             Width = 180;
             Height = 100;
             Text = caption;
+            BackColor = SystemColors.Window;
             FormBorderStyle = FormBorderStyle.FixedDialog;
-            ShowInTaskbar = false;
             TopMost = true;
             StartPosition = FormStartPosition.CenterScreen;
             MinimizeBox = false;
             MaximizeBox = false;
 
+            Shown += MyMessageBox_Shown;
+
             Label labelText = new Label();
             labelText.Margin = new Padding(0);
             labelText.Font = SystemFonts.MessageBoxFont;
             labelText.TextAlign = ContentAlignment.MiddleLeft;
-            labelText.BackColor = Color.White;
             labelText.AutoSize = true;
             labelText.MinimumSize = new Size(125, 0);
             labelText.MaximumSize = new Size(400, 400);
@@ -117,7 +117,6 @@ namespace ShareX.HelpersLib
             panel.FlowDirection = FlowDirection.RightToLeft;
 
             FlowLayoutPanel labelPanel = new FlowLayoutPanel();
-            labelPanel.BackColor = Color.White;
             labelPanel.FlowDirection = FlowDirection.TopDown;
             labelPanel.AutoSize = true;
             labelPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
@@ -146,6 +145,18 @@ namespace ShareX.HelpersLib
             panel.Location = new Point(0, labelPanel.Bottom + LabelVerticalPadding);
             panel.Size = new Size(labelPanel.Width + (LabelHorizontalPadding * 2), button1.Height + (ButtonPadding * 2));
             ClientSize = new Size(panel.Width, labelPanel.Height + (LabelVerticalPadding * 2) + panel.Height);
+
+            ShareXResources.ApplyTheme(this);
+
+            if (ShareXResources.UseCustomTheme)
+            {
+                panel.BackColor = ShareXResources.Theme.BorderColor;
+            }
+        }
+
+        private void MyMessageBox_Shown(object sender, System.EventArgs e)
+        {
+            this.ForceActivate();
         }
 
         public static DialogResult Show(string text, string caption, MessageBoxButtons buttons = MessageBoxButtons.OK)

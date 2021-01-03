@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,6 +24,7 @@
 #endregion License Information (GPL v3)
 
 using ShareX.HelpersLib;
+using ShareX.Properties;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -38,20 +39,21 @@ namespace ShareX
 
         private HotkeyManager manager;
 
-        public HotkeySettingsForm()
+        public HotkeySettingsForm(HotkeyManager hotkeyManager)
         {
             InitializeComponent();
-            Icon = ShareXResources.Icon;
+            ShareXResources.ApplyTheme(this);
 
-            if (Program.HotkeyManager != null)
-            {
-                PrepareHotkeys(Program.HotkeyManager);
-            }
+            PrepareHotkeys(hotkeyManager);
         }
 
         private void HotkeySettingsForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-            Program.HotkeyManager.IgnoreHotkeys = false;
+            if (manager != null)
+            {
+                manager.IgnoreHotkeys = false;
+                manager.HotkeysToggledTrigger -= HandleHotkeysToggle;
+            }
         }
 
         public void PrepareHotkeys(HotkeyManager hotkeyManager)
@@ -59,6 +61,8 @@ namespace ShareX
             if (manager == null)
             {
                 manager = hotkeyManager;
+                manager.HotkeysToggledTrigger += HandleHotkeysToggle;
+
                 AddControls();
             }
         }
@@ -76,6 +80,7 @@ namespace ShareX
         private void UpdateButtons()
         {
             btnEdit.Enabled = btnRemove.Enabled = btnDuplicate.Enabled = Selected != null;
+            btnMoveUp.Enabled = btnMoveDown.Enabled = Selected != null && flpHotkeys.Controls.Count > 1;
         }
 
         private HotkeySelectionControl FindSelectionControl(HotkeySettings hotkeySetting)
@@ -98,10 +103,29 @@ namespace ShareX
             }
         }
 
+        private void UpdateHotkeyStatus()
+        {
+            foreach (Control control in flpHotkeys.Controls)
+            {
+                ((HotkeySelectionControl)control).UpdateHotkeyStatus();
+            }
+        }
+
+        private void RegisterFailedHotkeys()
+        {
+            foreach (HotkeySettings hotkeySettings in manager.Hotkeys.Where(x => x.HotkeyInfo.Status == HotkeyStatus.Failed))
+            {
+                manager.RegisterHotkey(hotkeySettings);
+            }
+
+            UpdateHotkeyStatus();
+        }
+
         private void control_HotkeyChanged(object sender, EventArgs e)
         {
             HotkeySelectionControl control = (HotkeySelectionControl)sender;
             manager.RegisterHotkey(control.Setting);
+            RegisterFailedHotkeys();
         }
 
         private HotkeySelectionControl AddHotkeySelectionControl(HotkeySettings hotkeySetting)
@@ -110,7 +134,7 @@ namespace ShareX
             control.Margin = new Padding(0, 0, 0, 2);
             control.SelectedChanged += control_SelectedChanged;
             control.HotkeyChanged += control_HotkeyChanged;
-            control.LabelDoubleClick += control_LabelDoubleClick;
+            control.EditRequested += control_EditRequested;
             flpHotkeys.Controls.Add(control);
             return control;
         }
@@ -124,7 +148,7 @@ namespace ShareX
             }
         }
 
-        private void control_LabelDoubleClick(object sender, EventArgs e)
+        private void control_EditRequested(object sender, EventArgs e)
         {
             Edit((HotkeySelectionControl)sender);
         }
@@ -135,6 +159,11 @@ namespace ShareX
             {
                 Edit(Selected);
             }
+        }
+
+        private void HandleHotkeysToggle(bool hotkeysEnabled)
+        {
+            UpdateHotkeyStatus();
         }
 
         private void flpHotkeys_Layout(object sender, LayoutEventArgs e)
@@ -194,10 +223,59 @@ namespace ShareX
             }
         }
 
+        private void btnMoveUp_Click(object sender, EventArgs e)
+        {
+            if (Selected != null && flpHotkeys.Controls.Count > 1)
+            {
+                int index = flpHotkeys.Controls.GetChildIndex(Selected);
+
+                int newIndex;
+
+                if (index == 0)
+                {
+                    newIndex = flpHotkeys.Controls.Count - 1;
+                }
+                else
+                {
+                    newIndex = index - 1;
+                }
+
+                flpHotkeys.Controls.SetChildIndex(Selected, newIndex);
+                manager.Hotkeys.Move(index, newIndex);
+            }
+        }
+
+        private void btnMoveDown_Click(object sender, EventArgs e)
+        {
+            if (Selected != null && flpHotkeys.Controls.Count > 1)
+            {
+                int index = flpHotkeys.Controls.GetChildIndex(Selected);
+
+                int newIndex;
+
+                if (index == flpHotkeys.Controls.Count - 1)
+                {
+                    newIndex = 0;
+                }
+                else
+                {
+                    newIndex = index + 1;
+                }
+
+                flpHotkeys.Controls.SetChildIndex(Selected, newIndex);
+                manager.Hotkeys.Move(index, newIndex);
+            }
+        }
+
         private void btnReset_Click(object sender, EventArgs e)
         {
-            manager.ResetHotkeys();
-            AddControls();
+            if (MessageBox.Show(Resources.HotkeySettingsForm_Reset_all_hotkeys_to_defaults_Confirmation, "ShareX", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                manager.ResetHotkeys();
+                AddControls();
+                Selected = null;
+                UpdateButtons();
+            }
         }
     }
 }

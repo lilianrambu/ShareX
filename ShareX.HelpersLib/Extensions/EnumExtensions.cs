@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -70,6 +70,19 @@ namespace ShareX.HelpersLib
             return description;
         }
 
+        public static string GetLocalizedCategory(this Enum value)
+        {
+            return value.GetLocalizedCategory(Resources.ResourceManager);
+        }
+
+        public static string GetLocalizedCategory(this Enum value, ResourceManager resourceManager)
+        {
+            string resourceName = value.GetType().Name + "_" + value + "_Category";
+            string description = resourceManager.GetString(resourceName);
+
+            return description;
+        }
+
         public static int GetIndex(this Enum value)
         {
             Array values = Enum.GetValues(value.GetType());
@@ -112,6 +125,20 @@ namespace ShareX.HelpersLib
             ulong keysVal = Convert.ToUInt64(value);
             ulong flagVal = flags.Select(x => Convert.ToUInt64(x)).Aggregate((x, next) => x | next);
             return (T)Enum.ToObject(typeof(T), keysVal ^ flagVal);
+        }
+
+        public static T Next<T>(this Enum value)
+        {
+            Array values = Enum.GetValues(value.GetType());
+            int i = Array.IndexOf(values, value) + 1;
+            return i == values.Length ? (T)values.GetValue(0) : (T)values.GetValue(i);
+        }
+
+        public static T Previous<T>(this Enum value)
+        {
+            Array values = Enum.GetValues(value.GetType());
+            int i = Array.IndexOf(values, value) - 1;
+            return i == -1 ? (T)values.GetValue(values.Length - 1) : (T)values.GetValue(i);
         }
     }
 }

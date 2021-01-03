@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -23,31 +23,82 @@
 
 #endregion License Information (GPL v3)
 
+using ShareX.HelpersLib;
+using ShareX.UploadersLib.Properties;
 using System;
 using System.IO;
 
 namespace ShareX.UploadersLib.ImageUploaders
 {
+    public class CustomImageUploaderService : ImageUploaderService
+    {
+        public override ImageDestination EnumValue { get; } = ImageDestination.CustomImageUploader;
+
+        public override bool CheckConfig(UploadersConfig config)
+        {
+            return config.CustomUploadersList != null && config.CustomUploadersList.IsValidIndex(config.CustomImageUploaderSelected);
+        }
+
+        public override GenericUploader CreateUploader(UploadersConfig config, TaskReferenceHelper taskInfo)
+        {
+            int index;
+
+            if (taskInfo.OverrideCustomUploader)
+            {
+                index = taskInfo.CustomUploaderIndex.BetweenOrDefault(0, config.CustomUploadersList.Count - 1);
+            }
+            else
+            {
+                index = config.CustomImageUploaderSelected;
+            }
+
+            CustomUploaderItem customUploader = config.CustomUploadersList.ReturnIfValidIndex(index);
+
+            if (customUploader != null)
+            {
+                return new CustomImageUploader(customUploader);
+            }
+
+            return null;
+        }
+    }
+
     public sealed class CustomImageUploader : ImageUploader
     {
-        private CustomUploaderItem customUploader;
+        private CustomUploaderItem uploader;
 
         public CustomImageUploader(CustomUploaderItem customUploaderItem)
         {
-            customUploader = customUploaderItem;
+            uploader = customUploaderItem;
         }
 
         public override UploadResult Upload(Stream stream, string fileName)
         {
-            if (customUploader.RequestType != CustomUploaderRequestType.POST) throw new Exception("'Request type' must be 'POST' when using custom image uploader.");
-            if (string.IsNullOrEmpty(customUploader.FileFormName)) throw new Exception("'File form name' must be not empty when using custom image uploader.");
-            if (string.IsNullOrEmpty(customUploader.RequestURL)) throw new Exception("'Request URL' must be not empty.");
+            UploadResult result = new UploadResult();
+            CustomUploaderInput input = new CustomUploaderInput(fileName, "");
 
-            UploadResult result = UploadData(stream, customUploader.RequestURL, fileName, customUploader.FileFormName, customUploader.ParseArguments(), responseType: customUploader.ResponseType);
-
-            if (result.IsSuccess)
+            if (uploader.Body == CustomUploaderBody.MultipartFormData)
             {
-                customUploader.ParseResponse(result);
+                result = SendRequestFile(uploader.GetRequestURL(input), stream, fileName, uploader.GetFileFormName(), uploader.GetArguments(input),
+                    uploader.GetHeaders(input), null, uploader.RequestMethod);
+            }
+            else if (uploader.Body == CustomUploaderBody.Binary)
+            {
+                result.Response = SendRequest(uploader.RequestMethod, uploader.GetRequestURL(input), stream, RequestHelpers.GetMimeType(fileName),
+                    null, uploader.GetHeaders(input));
+            }
+            else
+            {
+                throw new Exception("Unsupported request format: " + uploader.Body);
+            }
+
+            try
+            {
+                uploader.ParseResponse(result, LastResponseInfo, input);
+            }
+            catch (Exception e)
+            {
+                Errors.Add(Resources.CustomFileUploader_Upload_Response_parse_failed_ + Environment.NewLine + e);
             }
 
             return result;

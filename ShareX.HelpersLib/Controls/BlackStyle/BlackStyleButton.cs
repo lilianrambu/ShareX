@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -26,6 +26,7 @@
 using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Design;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
@@ -34,6 +35,7 @@ namespace ShareX.HelpersLib
     [DefaultEvent("MouseClick")]
     public class BlackStyleButton : Control
     {
+        [Editor("System.ComponentModel.Design.MultilineStringEditor, System.Design, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a", typeof(UITypeEditor))]
         public override string Text
         {
             get
@@ -51,7 +53,7 @@ namespace ShareX.HelpersLib
                 {
                     text = value;
 
-                    Refresh();
+                    Invalidate();
                 }
             }
         }
@@ -64,19 +66,18 @@ namespace ShareX.HelpersLib
         public BlackStyleButton()
         {
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw | ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
-
+            ForeColor = Color.White;
+            Font = new Font("Arial", 12);
+            borderPen = new Pen(Color.FromArgb(30, 30, 30));
             Prepare();
         }
 
         private void Prepare()
         {
-            ForeColor = Color.White;
             backgroundBrush = new LinearGradientBrush(new Rectangle(2, 2, ClientSize.Width - 4, ClientSize.Height - 4), Color.FromArgb(105, 105, 105), Color.FromArgb(65, 65, 65), LinearGradientMode.Vertical);
             backgroundHoverBrush = new LinearGradientBrush(new Rectangle(2, 2, ClientSize.Width - 4, ClientSize.Height - 4), Color.FromArgb(115, 115, 115), Color.FromArgb(75, 75, 75), LinearGradientMode.Vertical);
             innerBorderBrush = new LinearGradientBrush(new Rectangle(1, 1, ClientSize.Width - 2, ClientSize.Height - 2), Color.FromArgb(125, 125, 125), Color.FromArgb(75, 75, 75), LinearGradientMode.Vertical);
             innerBorderPen = new Pen(innerBorderBrush);
-            borderPen = new Pen(Color.FromArgb(30, 30, 30));
-            Font = new Font("Arial", 12);
         }
 
         protected override void OnPaint(PaintEventArgs pe)
@@ -96,20 +97,23 @@ namespace ShareX.HelpersLib
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
+
             isHover = true;
-            Refresh();
+            Invalidate();
         }
 
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
+
             isHover = false;
-            Refresh();
+            Invalidate();
         }
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
+
             Prepare();
         }
 
@@ -130,7 +134,7 @@ namespace ShareX.HelpersLib
 
         private void DrawText(Graphics g)
         {
-            TextRenderer.DrawText(g, Text, Font, new Rectangle(ClientRectangle.X, ClientRectangle.Y + 1, ClientRectangle.Width, ClientRectangle.Height + 1), Color.Black);
+            TextRenderer.DrawText(g, Text, Font, new Rectangle(ClientRectangle.X, ClientRectangle.Y + 1, ClientRectangle.Width, ClientRectangle.Height), Color.Black);
             TextRenderer.DrawText(g, Text, Font, ClientRectangle, ForeColor);
         }
 

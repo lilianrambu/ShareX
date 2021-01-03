@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -63,11 +63,11 @@ namespace ShareX.UploadersLib.FileUploaders
                         Token = sendSpace.AuthCreateToken();
                         if (string.IsNullOrEmpty(Token)) throw new Exception("Token is null or empty.");
                     }
-                    if (string.IsNullOrEmpty(SessionKey) || (FastDateTime.Now - LastSessionKey).Minutes > 30)
+                    if (string.IsNullOrEmpty(SessionKey) || (DateTime.Now - LastSessionKey).TotalMinutes > 30)
                     {
                         SessionKey = sendSpace.AuthLogin(Token, username, password).SessionKey;
-                        if (string.IsNullOrEmpty(Token)) throw new Exception("SessionKey is null or empty.");
-                        LastSessionKey = FastDateTime.Now;
+                        if (string.IsNullOrEmpty(SessionKey)) throw new Exception("SessionKey is null or empty.");
+                        LastSessionKey = DateTime.Now;
                     }
                     UploadInfo = sendSpace.UploadGetInfo(SessionKey);
                     if (UploadInfo == null) throw new Exception("UploadInfo is null.");

@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -23,27 +23,20 @@
 
 #endregion License Information (GPL v3)
 
-// gpailler
-
+using ShareX.HelpersLib;
 using ShareX.UploadersLib.Properties;
 using System;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace ShareX.UploadersLib.GUI
+namespace ShareX.UploadersLib
 {
-    using System.Threading.Tasks;
-
     public partial class JiraUpload : Form
     {
         public delegate string GetSummaryHandler(string issueId);
 
-        private readonly string _issuePrefix;
-        private readonly GetSummaryHandler _getSummary;
-
-        public JiraUpload()
-        {
-            InitializeComponent();
-        }
+        private readonly string issuePrefix;
+        private readonly GetSummaryHandler getSummary;
 
         public string IssueId
         {
@@ -53,22 +46,27 @@ namespace ShareX.UploadersLib.GUI
             }
         }
 
-        public JiraUpload(string issuePrefix, GetSummaryHandler getSummary)
-            : this()
+        public JiraUpload()
+        {
+            InitializeComponent();
+            ShareXResources.ApplyTheme(this);
+        }
+
+        public JiraUpload(string issuePrefix, GetSummaryHandler getSummary) : this()
         {
             if (getSummary == null)
             {
-                throw new ArgumentNullException("getSummary");
+                throw new ArgumentNullException(nameof(getSummary));
             }
-            _issuePrefix = issuePrefix;
-            _getSummary = getSummary;
+            this.issuePrefix = issuePrefix;
+            this.getSummary = getSummary;
         }
 
         private void JiraUpload_Load(object sender, EventArgs e)
         {
             UpdateSummary(null);
 
-            txtIssueId.Text = _issuePrefix;
+            txtIssueId.Text = issuePrefix;
             txtIssueId.SelectionStart = txtIssueId.Text.Length;
         }
 
@@ -85,19 +83,17 @@ namespace ShareX.UploadersLib.GUI
 
         private void ValidateIssueId(string issueId)
         {
-            Task.Factory
-                .StartNew(() => _getSummary(issueId))
-                .ContinueWith(UpdateSummaryAsync);
+            Task.Run(() => getSummary(issueId)).ContinueWith(UpdateSummaryAsync);
         }
 
         private void UpdateSummaryAsync(Task<string> task)
         {
-            this.Invoke((Action)(() => UpdateSummary(task.Result)));
+            this.InvokeSafe(() => UpdateSummary(task.Result));
         }
 
         private void UpdateSummary(string summary)
         {
-            btnUpload.Enabled = (summary != null);
+            btnUpload.Enabled = summary != null;
 
             lblSummary.Text = summary ?? Resources.JiraUpload_ValidateIssueId_Issue_not_found;
             lblSummary.Enabled = summary != null;

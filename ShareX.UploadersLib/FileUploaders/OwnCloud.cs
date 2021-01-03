@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,23 +24,58 @@
 #endregion License Information (GPL v3)
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using ShareX.HelpersLib;
+using ShareX.UploadersLib.Properties;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Drawing;
 using System.IO;
+using System.Windows.Forms;
 
 namespace ShareX.UploadersLib.FileUploaders
 {
+    public class OwnCloudFileUploaderService : FileUploaderService
+    {
+        public override FileDestination EnumValue { get; } = FileDestination.OwnCloud;
+
+        public override Image ServiceImage => Resources.OwnCloud;
+
+        public override bool CheckConfig(UploadersConfig config)
+        {
+            return !string.IsNullOrEmpty(config.OwnCloudHost) && !string.IsNullOrEmpty(config.OwnCloudUsername) && !string.IsNullOrEmpty(config.OwnCloudPassword);
+        }
+
+        public override GenericUploader CreateUploader(UploadersConfig config, TaskReferenceHelper taskInfo)
+        {
+            return new OwnCloud(config.OwnCloudHost, config.OwnCloudUsername, config.OwnCloudPassword)
+            {
+                Path = config.OwnCloudPath,
+                CreateShare = config.OwnCloudCreateShare,
+                DirectLink = config.OwnCloudDirectLink,
+                PreviewLink = config.OwnCloudUsePreviewLinks,
+                IsCompatibility81 = config.OwnCloud81Compatibility,
+                AutoExpireTime = config.OwnCloudExpiryTime,
+                AutoExpire = config.OwnCloudAutoExpire
+            };
+        }
+
+        public override TabPage GetUploadersConfigTabPage(UploadersConfigForm form) => form.tpOwnCloud;
+    }
+
     public sealed class OwnCloud : FileUploader
     {
         public string Host { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }
         public string Path { get; set; }
+        public int AutoExpireTime { get; set; }
         public bool CreateShare { get; set; }
         public bool DirectLink { get; set; }
-        public bool IgnoreInvalidCert { get; set; }
+        public bool PreviewLink { get; set; }
+        public bool IsCompatibility81 { get; set; }
+        public bool AutoExpire { get; set; }
 
         public OwnCloud(string host, string username, string password)
         {
@@ -66,49 +101,38 @@ namespace ShareX.UploadersLib.FileUploaders
                 Path = "/";
             }
 
+            // Original, unencoded path. Necessary for shared files
             string path = URLHelpers.CombineURL(Path, fileName);
-            string url = URLHelpers.CombineURL(Host, "remote.php/webdav", path);
+            // Encoded path, necessary when sent in the URL
+            string encodedPath = URLHelpers.CombineURL(Path, URLHelpers.URLEncode(fileName));
+
+            string url = URLHelpers.CombineURL(Host, "remote.php/webdav", encodedPath);
             url = URLHelpers.FixPrefix(url);
-            NameValueCollection headers = CreateAuthenticationHeader(Username, Password);
 
-            SSLBypassHelper sslBypassHelper = null;
+            NameValueCollection headers = RequestHelpers.CreateAuthenticationHeader(Username, Password);
+            headers["OCS-APIREQUEST"] = "true";
 
-            try
+            string response = SendRequest(HttpMethod.PUT, url, stream, RequestHelpers.GetMimeType(fileName), null, headers);
+
+            UploadResult result = new UploadResult(response);
+
+            if (!IsError)
             {
-                if (IgnoreInvalidCert)
+                if (CreateShare)
                 {
-                    sslBypassHelper = new SSLBypassHelper();
+                    AllowReportProgress = false;
+                    result.URL = ShareFile(path);
                 }
-
-                string response = SendRequestStream(url, stream, Helpers.GetMimeType(fileName), headers, method: HttpMethod.PUT);
-
-                UploadResult result = new UploadResult(response);
-
-                if (!IsError)
+                else
                 {
-                    if (CreateShare)
-                    {
-                        AllowReportProgress = false;
-                        result.URL = ShareFile(path);
-                    }
-                    else
-                    {
-                        result.IsURLExpected = false;
-                    }
-                }
-
-                return result;
-            }
-            finally
-            {
-                if (sslBypassHelper != null)
-                {
-                    sslBypassHelper.Dispose();
+                    result.IsURLExpected = false;
                 }
             }
+
+            return result;
         }
 
-        // http://doc.owncloud.org/server/7.0/developer_manual/core/ocs-share-api.html#create-a-new-share
+        // https://doc.owncloud.org/server/10.0/developer_manual/core/ocs-share-api.html#create-a-new-share
         public string ShareFile(string path)
         {
             Dictionary<string, string> args = new Dictionary<string, string>();
@@ -119,10 +143,33 @@ namespace ShareX.UploadersLib.FileUploaders
             // args.Add("password", ""); // password to protect public link Share with
             args.Add("permissions", "1"); // 1 = read; 2 = update; 4 = create; 8 = delete; 16 = share; 31 = all (default: 31, for public shares: 1)
 
+            if (AutoExpire)
+            {
+                if (AutoExpireTime == 0)
+                {
+                    throw new Exception("ownCloud Auto Epxire Time is not valid.");
+                }
+                else
+                {
+                    try
+                    {
+                        DateTime expireTime = DateTime.UtcNow.AddDays(AutoExpireTime);
+                        args.Add("expireDate", $"{expireTime.Year}-{expireTime.Month}-{expireTime.Day}");
+                    }
+                    catch
+                    {
+                        throw new Exception("ownCloud Auto Expire time is invalid");
+                    }
+                }
+            }
+
             string url = URLHelpers.CombineURL(Host, "ocs/v1.php/apps/files_sharing/api/v1/shares?format=json");
             url = URLHelpers.FixPrefix(url);
-            NameValueCollection headers = CreateAuthenticationHeader(Username, Password);
-            string response = SendRequest(HttpMethod.POST, url, args, headers);
+
+            NameValueCollection headers = RequestHelpers.CreateAuthenticationHeader(Username, Password);
+            headers["OCS-APIREQUEST"] = "true";
+
+            string response = SendRequestMultiPart(url, args, headers);
 
             if (!string.IsNullOrEmpty(response))
             {
@@ -132,8 +179,16 @@ namespace ShareX.UploadersLib.FileUploaders
                 {
                     if (result.ocs.data != null && result.ocs.meta.statuscode == 100)
                     {
-                        string link = result.ocs.data.url;
-                        if (DirectLink) link += "&download";
+                        OwnCloudShareResponseData data = ((JObject)result.ocs.data).ToObject<OwnCloudShareResponseData>();
+                        string link = data.url;
+                        if (PreviewLink && Helpers.IsImageFile(path))
+                        {
+                            link += "/preview";
+                        }
+                        else if (DirectLink)
+                        {
+                            link += (IsCompatibility81 ? "/" : "&") + "download";
+                        }
                         return link;
                     }
                     else
@@ -154,7 +209,7 @@ namespace ShareX.UploadersLib.FileUploaders
         public class OwnCloudShareResponseOcs
         {
             public OwnCloudShareResponseMeta meta { get; set; }
-            public OwnCloudShareResponseData data { get; set; }
+            public object data { get; set; }
         }
 
         public class OwnCloudShareResponseMeta

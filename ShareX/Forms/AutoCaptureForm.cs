@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -51,6 +51,7 @@ namespace ShareX
         }
 
         public static bool IsRunning { get; private set; }
+        public TaskSettings TaskSettings { get; internal set; }
 
         private bool isLoaded;
         private Timer statusTimer;
@@ -63,7 +64,7 @@ namespace ShareX
         private AutoCaptureForm()
         {
             InitializeComponent();
-            Icon = ShareXResources.Icon;
+            ShareXResources.ApplyTheme(this);
             niTray.Icon = Resources.clock.ToIcon();
 
             screenshotTimer = new System.Timers.Timer();
@@ -75,7 +76,7 @@ namespace ShareX
 
             customRegion = Program.Settings.AutoCaptureRegion;
             UpdateRegion();
-            nudRepeatTime.Value = Program.Settings.AutoCaptureRepeatTime;
+            nudRepeatTime.SetValue(Program.Settings.AutoCaptureRepeatTime);
             cbAutoMinimize.Checked = Program.Settings.AutoCaptureMinimizeToTray;
             cbWaitUploads.Checked = Program.Settings.AutoCaptureWaitUpload;
 
@@ -107,26 +108,25 @@ namespace ShareX
 
             if (!rect.IsEmpty)
             {
-                Image img = Screenshot.CaptureRectangle(rect);
+                Bitmap bmp = TaskHelpers.GetScreenshot(TaskSettings).CaptureRectangle(rect);
 
-                if (img != null)
+                if (bmp != null)
                 {
-                    TaskSettings taskSettings = TaskSettings.GetDefaultTaskSettings();
-                    taskSettings.UseDefaultAfterCaptureJob = false;
-                    taskSettings.AfterCaptureJob = taskSettings.AfterCaptureJob.Remove(AfterCaptureTasks.AnnotateImage);
-                    taskSettings.UseDefaultAdvancedSettings = false;
-                    taskSettings.AdvancedSettings.DisableNotifications = true;
+                    TaskSettings.UseDefaultAfterCaptureJob = false;
+                    TaskSettings.AfterCaptureJob = TaskSettings.AfterCaptureJob.Remove(AfterCaptureTasks.AnnotateImage);
+                    TaskSettings.UseDefaultAdvancedSettings = false;
+                    TaskSettings.AdvancedSettings.DisableNotifications = true;
 
-                    UploadManager.RunImageTask(img, taskSettings);
+                    UploadManager.RunImageTask(bmp, TaskSettings, true, true);
                 }
             }
         }
 
-        private void SelectRegion(TaskSettings taskSettings)
+        private void SelectRegion()
         {
             Rectangle rect;
 
-            if (TaskHelpers.SelectRegion(out rect, taskSettings))
+            if (RegionCaptureTasks.GetRectangleRegion(out rect, TaskSettings.CaptureSettings.SurfaceOptions))
             {
                 Program.Settings.AutoCaptureRegion = rect;
                 UpdateRegion();
@@ -149,7 +149,7 @@ namespace ShareX
             if (IsRunning && !IsDisposed)
             {
                 timeleft = Math.Max(0, delay - (int)stopwatch.ElapsedMilliseconds);
-                percentage = (int)(100 - (double)timeleft / delay * 100);
+                percentage = (int)(100 - ((double)timeleft / delay * 100));
                 tspbBar.Value = percentage;
                 string secondsLeft = (timeleft / 1000f).ToString("0.0");
                 tsslStatus.Text = " " + string.Format(Resources.AutoCaptureForm_UpdateStatus_Timeleft___0_s___1____Total___2_, secondsLeft, percentage, count);
@@ -207,8 +207,7 @@ namespace ShareX
 
         private void btnRegion_Click(object sender, EventArgs e)
         {
-            TaskSettings taskSettings = TaskSettings.GetDefaultTaskSettings();
-            SelectRegion(taskSettings);
+            SelectRegion();
         }
 
         private void nudDuration_ValueChanged(object sender, EventArgs e)
@@ -250,7 +249,7 @@ namespace ShareX
         private void niTray_MouseClick(object sender, MouseEventArgs e)
         {
             niTray.Visible = false;
-            this.ShowActivate();
+            this.ForceActivate();
         }
     }
 }

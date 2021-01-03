@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -32,11 +32,15 @@ namespace ShareX.HelpersLib
 {
     public abstract class UpdateChecker
     {
+        /// <summary>For testing purposes.</summary>
+        public static bool ForceUpdate { get; private set; } = false;
+
         public UpdateStatus Status { get; set; }
         public Version CurrentVersion { get; set; }
         public Version LatestVersion { get; set; }
         public ReleaseChannelType ReleaseType { get; set; }
         public bool IsBeta { get; set; }
+        public bool IsPortable { get; set; }
         public IWebProxy Proxy { get; set; }
 
         private string filename;
@@ -60,8 +64,6 @@ namespace ShareX.HelpersLib
 
         public string DownloadURL { get; set; }
 
-        private const bool forceUpdate = false; // For testing purposes
-
         public void RefreshStatus()
         {
             if (CurrentVersion == null)
@@ -70,7 +72,7 @@ namespace ShareX.HelpersLib
             }
 
             if (Status != UpdateStatus.UpdateCheckFailed && CurrentVersion != null && LatestVersion != null && !string.IsNullOrEmpty(DownloadURL) &&
-                (forceUpdate || Helpers.CompareVersion(CurrentVersion, LatestVersion) < 0 || (IsBeta && Helpers.CompareVersion(CurrentVersion, LatestVersion) == 0)))
+                (ForceUpdate || Helpers.CompareVersion(CurrentVersion, LatestVersion) < 0 || (IsBeta && Helpers.CompareVersion(CurrentVersion, LatestVersion) == 0)))
             {
                 Status = UpdateStatus.UpdateAvailable;
             }
@@ -81,5 +83,27 @@ namespace ShareX.HelpersLib
         }
 
         public abstract void CheckUpdate();
+
+        public void DownloadUpdate()
+        {
+            DebugHelper.WriteLine("Updating ShareX from version {0} to {1}", CurrentVersion, LatestVersion);
+
+            if (IsPortable)
+            {
+                URLHelpers.OpenURL(DownloadURL);
+            }
+            else
+            {
+                using (DownloaderForm updaterForm = new DownloaderForm(this))
+                {
+                    updaterForm.ShowDialog();
+
+                    if (updaterForm.Status == DownloaderFormStatus.InstallStarted)
+                    {
+                        Application.Exit();
+                    }
+                }
+            }
+        }
     }
 }

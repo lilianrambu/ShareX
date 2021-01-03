@@ -1,3 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -135,12 +136,12 @@
     <value>Ouvrir le fichier...</value>
   </data>
   <data name="btnOpenFolder.Text" xml:space="preserve">
-    <value>Ouvrir le répetoire...</value>
+    <value>Ouvrir le dossier...</value>
   </data>
   <data name="btnOpenLink.Text" xml:space="preserve">
     <value>Ouvrir le lien...</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>ShareX - Actions après la mise en ligne</value>
+    <value>ShareX - Après la mise en ligne</value>
   </data>
 </root>

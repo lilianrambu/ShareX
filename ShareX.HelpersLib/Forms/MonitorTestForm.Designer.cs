@@ -30,6 +30,7 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MonitorTestForm));
             this.pSettings = new System.Windows.Forms.Panel();
+            this.btnScreenTearingTest = new System.Windows.Forms.Button();
             this.btnGradientColor2 = new ShareX.HelpersLib.ColorButton();
             this.btnGradientColor1 = new ShareX.HelpersLib.ColorButton();
             this.lblTip = new System.Windows.Forms.Label();
@@ -65,8 +66,9 @@
             // 
             // pSettings
             // 
-            this.pSettings.BackColor = System.Drawing.Color.WhiteSmoke;
-            this.pSettings.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.pSettings.BackColor = System.Drawing.SystemColors.Window;
+            this.pSettings.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pSettings.Controls.Add(this.btnScreenTearingTest);
             this.pSettings.Controls.Add(this.btnGradientColor2);
             this.pSettings.Controls.Add(this.btnGradientColor1);
             this.pSettings.Controls.Add(this.lblTip);
@@ -95,6 +97,13 @@
             resources.ApplyResources(this.pSettings, "pSettings");
             this.pSettings.Name = "pSettings";
             // 
+            // btnScreenTearingTest
+            // 
+            resources.ApplyResources(this.btnScreenTearingTest, "btnScreenTearingTest");
+            this.btnScreenTearingTest.Name = "btnScreenTearingTest";
+            this.btnScreenTearingTest.UseVisualStyleBackColor = true;
+            this.btnScreenTearingTest.Click += new System.EventHandler(this.btnScreenTearingTest_Click);
+            // 
             // btnGradientColor2
             // 
             this.btnGradientColor2.Color = System.Drawing.Color.Empty;
@@ -113,6 +122,7 @@
             // 
             // lblTip
             // 
+            this.lblTip.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             resources.ApplyResources(this.lblTip, "lblTip");
             this.lblTip.Name = "lblTip";
             // 
@@ -268,8 +278,9 @@
             // MonitorTestForm
             // 
             resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.Gray;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.BackColor = System.Drawing.Color.White;
             this.Controls.Add(this.pSettings);
             this.Cursor = System.Windows.Forms.Cursors.Default;
             this.DoubleBuffered = true;
@@ -318,6 +329,6 @@
         private System.Windows.Forms.Label lblTip;
         private ColorButton btnGradientColor2;
         private ColorButton btnGradientColor1;
-
+        private System.Windows.Forms.Button btnScreenTearingTest;
     }
 }

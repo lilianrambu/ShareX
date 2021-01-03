@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,33 +25,57 @@
 
 using Newtonsoft.Json;
 using ShareX.HelpersLib;
+using ShareX.UploadersLib.Properties;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
+using System.Windows.Forms;
 
 namespace ShareX.UploadersLib.ImageUploaders
 {
+    public class CheveretoImageUploaderService : ImageUploaderService
+    {
+        public override ImageDestination EnumValue { get; } = ImageDestination.Chevereto;
+
+        public override Image ServiceImage => Resources.Chevereto;
+
+        public override bool CheckConfig(UploadersConfig config)
+        {
+            return config.CheveretoUploader != null && !string.IsNullOrEmpty(config.CheveretoUploader.UploadURL) &&
+                !string.IsNullOrEmpty(config.CheveretoUploader.APIKey);
+        }
+
+        public override GenericUploader CreateUploader(UploadersConfig config, TaskReferenceHelper taskInfo)
+        {
+            return new Chevereto(config.CheveretoUploader)
+            {
+                DirectURL = config.CheveretoDirectURL
+            };
+        }
+
+        public override TabPage GetUploadersConfigTabPage(UploadersConfigForm form) => form.tpChevereto;
+    }
+
     public sealed class Chevereto : ImageUploader
     {
-        public string Website { get; set; }
-        public string APIKey { get; set; }
+        public CheveretoUploader Uploader { get; private set; }
+
         public bool DirectURL { get; set; }
 
-        public Chevereto(string website, string apiKey)
+        public Chevereto(CheveretoUploader uploader)
         {
-            APIKey = apiKey;
-            Website = website;
+            Uploader = uploader;
         }
 
         public override UploadResult Upload(Stream stream, string fileName)
         {
             Dictionary<string, string> args = new Dictionary<string, string>();
-            args.Add("key", APIKey);
+            args.Add("key", Uploader.APIKey);
             args.Add("format", "json");
 
-            string url = URLHelpers.FixPrefix(Website);
-            url = URLHelpers.CombineURL(url, "api/1/upload");
+            string url = URLHelpers.FixPrefix(Uploader.UploadURL);
 
-            UploadResult result = UploadData(stream, url, fileName, "source", args);
+            UploadResult result = SendRequestFile(url, stream, fileName, "source", args);
 
             if (result.IsSuccess)
             {

@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,52 +24,33 @@
 #endregion License Information (GPL v3)
 
 using ShareX.HelpersLib;
-using ShareX.IndexerLib.Properties;
-using System.IO;
-using System.Text;
 
 namespace ShareX.IndexerLib
 {
     public static class HtmlHelper
     {
-        public static string GetCssStyle(string filePath)
-        {
-            string css;
-
-            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
-            {
-                css = File.ReadAllText(filePath, Encoding.UTF8);
-            }
-            else
-            {
-                css = Resources.IndexerDefault;
-            }
-
-            return string.Format("<style type=\"text/css\">\r\n{0}\r\n</style>", css);
-        }
-
         public static string StartTag(string tag, string style = "", string otherFields = "")
         {
-            string css = string.Empty;
+            string css = "";
 
             if (!string.IsNullOrEmpty(style))
             {
-                css = string.Format(" style=\"{0}\"", style);
+                css = $" style=\"{style}\"";
             }
 
-            string fields = string.Empty;
+            string fields = "";
 
             if (!string.IsNullOrEmpty(otherFields))
             {
-                fields = " " + otherFields;
+                fields = $" {otherFields}";
             }
 
-            return string.Format("<{0}{2}{1}>", tag, fields, css);
+            return $"<{tag}{css}{fields}>";
         }
 
         public static string EndTag(string tag)
         {
-            return string.Format("</{0}>", tag);
+            return $"</{tag}>";
         }
 
         public static string Tag(string tag, string content, string style = "", string otherFields = "")

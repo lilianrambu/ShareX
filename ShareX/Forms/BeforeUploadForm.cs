@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -35,7 +35,7 @@ namespace ShareX
         public BeforeUploadForm(TaskInfo info)
         {
             InitializeComponent();
-            Icon = ShareXResources.Icon;
+            ShareXResources.ApplyTheme(this);
             DialogResult = DialogResult.OK;
 
             ucBeforeUpload.InitCompleted += currentDestination =>
@@ -47,6 +47,11 @@ namespace ShareX
             };
 
             ucBeforeUpload.Init(info);
+        }
+
+        private void BeforeUploadForm_Shown(object sender, EventArgs e)
+        {
+            this.ForceActivate();
         }
 
         private void btnOK_Click(object sender, EventArgs e)

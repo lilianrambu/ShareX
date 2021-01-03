@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -34,27 +34,34 @@ namespace ShareX
     {
         public ExternalProgram FileAction { get; private set; }
 
-        public ActionsForm()
-            : this(new ExternalProgram())
+        public ActionsForm() : this(new ExternalProgram())
         {
         }
 
         public ActionsForm(ExternalProgram fileAction)
         {
             InitializeComponent();
-            Icon = ShareXResources.Icon;
+            ShareXResources.ApplyTheme(this);
+
             FileAction = fileAction;
             txtName.Text = fileAction.Name ?? "";
             txtPath.Text = fileAction.Path ?? "";
             txtArguments.Text = fileAction.Args ?? "";
-            CodeMenu.Create<ActionsCodeMenuEntry>(txtArguments);
+            CodeMenu.Create<CodeMenuEntryActions>(txtArguments);
             txtOutputExtension.Text = fileAction.OutputExtension ?? "";
             txtExtensions.Text = fileAction.Extensions ?? "";
+            cbHiddenWindow.Checked = fileAction.HiddenWindow;
+            cbDeleteInputFile.Checked = fileAction.DeleteInputFile;
         }
 
         private void btnPathBrowse_Click(object sender, EventArgs e)
         {
-            Helpers.BrowseFile("ShareX - " + Resources.ActionsForm_btnPathBrowse_Click_Choose_file_path, txtPath);
+            Helpers.BrowseFile(txtPath, "", true);
+        }
+
+        private void txtOutputExtension_TextChanged(object sender, EventArgs e)
+        {
+            cbDeleteInputFile.Enabled = txtOutputExtension.TextLength > 0;
         }
 
         private void btnOK_Click(object sender, EventArgs e)
@@ -76,12 +83,17 @@ namespace ShareX
             FileAction.Args = txtArguments.Text;
             FileAction.Extensions = txtExtensions.Text;
             FileAction.OutputExtension = txtOutputExtension.Text;
+            FileAction.HiddenWindow = cbHiddenWindow.Checked;
+            FileAction.DeleteInputFile = cbDeleteInputFile.Checked;
+
             DialogResult = DialogResult.OK;
+            Close();
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
+            Close();
         }
     }
 }

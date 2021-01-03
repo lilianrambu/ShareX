@@ -34,6 +34,7 @@
             this.pbMain = new System.Windows.Forms.PictureBox();
             this.cmsMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.tsmiCopyImage = new System.Windows.Forms.ToolStripMenuItem();
+            this.lblImageSize = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pbMain)).BeginInit();
             this.cmsMenu.SuspendLayout();
             this.SuspendLayout();
@@ -47,10 +48,18 @@
             // 
             // pbMain
             // 
-            this.pbMain.BackColor = System.Drawing.Color.White;
             resources.ApplyResources(this.pbMain, "pbMain");
+            this.pbMain.ErrorImage = global::ShareX.HelpersLib.Properties.Resources.cross;
+            this.pbMain.InitialImage = global::ShareX.HelpersLib.Properties.Resources.Loading;
             this.pbMain.Name = "pbMain";
             this.pbMain.TabStop = false;
+            this.pbMain.LoadCompleted += new System.ComponentModel.AsyncCompletedEventHandler(this.PbMain_LoadCompleted);
+            this.pbMain.LoadProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.PbMain_LoadProgressChanged);
+            this.pbMain.MouseDown += new System.Windows.Forms.MouseEventHandler(this.PbMain_MouseDown);
+            this.pbMain.MouseLeave += new System.EventHandler(this.PbMain_MouseLeave);
+            this.pbMain.MouseMove += new System.Windows.Forms.MouseEventHandler(this.PbMain_MouseMove);
+            this.pbMain.MouseUp += new System.Windows.Forms.MouseEventHandler(this.PbMain_MouseUp);
+            this.pbMain.Resize += new System.EventHandler(this.PbMain_Resize);
             // 
             // cmsMenu
             // 
@@ -66,17 +75,26 @@
             resources.ApplyResources(this.tsmiCopyImage, "tsmiCopyImage");
             this.tsmiCopyImage.Click += new System.EventHandler(this.tsmiCopyImage_Click);
             // 
+            // lblImageSize
+            // 
+            resources.ApplyResources(this.lblImageSize, "lblImageSize");
+            this.lblImageSize.BackColor = System.Drawing.SystemColors.Window;
+            this.lblImageSize.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lblImageSize.Name = "lblImageSize";
+            // 
             // MyPictureBox
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.White;
+            this.BackColor = System.Drawing.SystemColors.Window;
+            this.Controls.Add(this.lblImageSize);
             this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.pbMain);
             this.Name = "MyPictureBox";
             ((System.ComponentModel.ISupportInitialize)(this.pbMain)).EndInit();
             this.cmsMenu.ResumeLayout(false);
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -86,5 +104,6 @@
         private System.Windows.Forms.PictureBox pbMain;
         private System.Windows.Forms.ContextMenuStrip cmsMenu;
         private System.Windows.Forms.ToolStripMenuItem tsmiCopyImage;
+        private System.Windows.Forms.Label lblImageSize;
     }
 }

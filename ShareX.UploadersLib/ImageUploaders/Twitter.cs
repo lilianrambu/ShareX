@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,22 +24,52 @@
 #endregion License Information (GPL v3)
 
 using Newtonsoft.Json;
-using ShareX.UploadersLib.HelperClasses;
+using ShareX.HelpersLib;
+using ShareX.UploadersLib.Properties;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 
 namespace ShareX.UploadersLib.ImageUploaders
 {
+    public class TwitterImageUploaderService : ImageUploaderService
+    {
+        public override ImageDestination EnumValue { get; } = ImageDestination.Twitter;
+
+        public override Icon ServiceIcon => Resources.Twitter;
+
+        public override bool CheckConfig(UploadersConfig config)
+        {
+            return config.TwitterOAuthInfoList != null && config.TwitterOAuthInfoList.IsValidIndex(config.TwitterSelectedAccount) &&
+                OAuthInfo.CheckOAuth(config.TwitterOAuthInfoList[config.TwitterSelectedAccount]);
+        }
+
+        public override GenericUploader CreateUploader(UploadersConfig config, TaskReferenceHelper taskInfo)
+        {
+            OAuthInfo twitterOAuth = config.TwitterOAuthInfoList.ReturnIfValidIndex(config.TwitterSelectedAccount);
+
+            return new Twitter(twitterOAuth)
+            {
+                SkipMessageBox = config.TwitterSkipMessageBox,
+                DefaultMessage = config.TwitterDefaultMessage ?? ""
+            };
+        }
+
+        public override TabPage GetUploadersConfigTabPage(UploadersConfigForm form) => form.tpTwitter;
+    }
+
     public class Twitter : ImageUploader, IOAuth
     {
         private const string APIVersion = "1.1";
         private const int characters_reserved_per_media = 23;
 
-        public const int MessageLimit = 140;
+        public const int MessageLimit = 280;
         public const int MessageMediaLimit = MessageLimit - characters_reserved_per_media;
 
         public OAuthInfo AuthInfo { get; set; }
+        public bool SkipMessageBox { get; set; }
+        public string DefaultMessage { get; set; }
 
         public Twitter(OAuthInfo oauth)
         {
@@ -59,17 +89,25 @@ namespace ShareX.UploadersLib.ImageUploaders
 
         public override UploadResult Upload(Stream stream, string fileName)
         {
-            using (TwitterTweetForm twitterMsg = new TwitterTweetForm())
-            {
-                twitterMsg.Length = MessageMediaLimit;
+            string message = DefaultMessage;
 
-                if (twitterMsg.ShowDialog() == DialogResult.OK)
+            if (!SkipMessageBox)
+            {
+                using (TwitterTweetForm twitterMsg = new TwitterTweetForm())
                 {
-                    return TweetMessageWithMedia(twitterMsg.Message, stream, fileName);
+                    twitterMsg.MediaMode = true;
+                    twitterMsg.Message = DefaultMessage;
+
+                    if (twitterMsg.ShowDialog() != DialogResult.OK)
+                    {
+                        return new UploadResult() { IsURLExpected = false };
+                    }
+
+                    message = twitterMsg.Message;
                 }
             }
 
-            return new UploadResult() { IsURLExpected = false };
+            return TweetMessageWithMedia(message, stream, fileName);
         }
 
         public TwitterStatusResponse TweetMessage(string message)
@@ -80,13 +118,12 @@ namespace ShareX.UploadersLib.ImageUploaders
             }
 
             string url = string.Format("https://api.twitter.com/{0}/statuses/update.json", APIVersion);
+            string query = OAuthManager.GenerateQuery(url, null, HttpMethod.POST, AuthInfo);
 
             Dictionary<string, string> args = new Dictionary<string, string>();
             args.Add("status", message);
 
-            string query = OAuthManager.GenerateQuery(url, args, HttpMethod.POST, AuthInfo);
-
-            string response = SendRequest(HttpMethod.POST, query);
+            string response = SendRequestMultiPart(query, args);
 
             if (!string.IsNullOrEmpty(response))
             {
@@ -104,13 +141,12 @@ namespace ShareX.UploadersLib.ImageUploaders
             }
 
             string url = string.Format("https://api.twitter.com/{0}/statuses/update_with_media.json", APIVersion);
+            string query = OAuthManager.GenerateQuery(url, null, HttpMethod.POST, AuthInfo);
 
             Dictionary<string, string> args = new Dictionary<string, string>();
             args.Add("status", message);
 
-            string query = OAuthManager.GenerateQuery(url, args, HttpMethod.POST, AuthInfo);
-
-            UploadResult result = UploadData(stream, query, fileName, "media[]");
+            UploadResult result = SendRequestFile(query, stream, fileName, "media[]", args);
 
             if (!string.IsNullOrEmpty(result.Response))
             {

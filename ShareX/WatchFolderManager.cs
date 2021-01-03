@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -23,8 +23,10 @@
 
 #endregion License Information (GPL v3)
 
+using ShareX.HelpersLib;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace ShareX
@@ -33,8 +35,13 @@ namespace ShareX
     {
         public List<WatchFolder> WatchFolders { get; private set; }
 
-        public WatchFolderManager()
+        public void UpdateWatchFolders()
         {
+            if (WatchFolders != null)
+            {
+                UnregisterAllWatchFolders();
+            }
+
             WatchFolders = new List<WatchFolder>();
 
             foreach (WatchFolderSettings defaultWatchFolderSetting in Program.DefaultTaskSettings.WatchFolderList)
@@ -71,10 +78,17 @@ namespace ShareX
                 }
 
                 WatchFolder watchFolder = new WatchFolder { Settings = watchFolderSetting, TaskSettings = taskSettings };
-                watchFolder.FileWatcherTrigger += path =>
+                watchFolder.FileWatcherTrigger += origPath =>
                 {
                     TaskSettings taskSettingsCopy = TaskSettings.GetSafeTaskSettings(taskSettings);
-                    UploadManager.UploadFile(path, taskSettingsCopy);
+                    string destPath = origPath;
+                    if (watchFolderSetting.MoveFilesToScreenshotsFolder)
+                    {
+                        destPath = Helpers.GetUniqueFilePath(Path.Combine(Program.ScreenshotsFolder, Path.GetFileName(origPath)));
+                        Helpers.CreateDirectoryFromFilePath(destPath);
+                        File.Move(origPath, destPath);
+                    }
+                    UploadManager.UploadFile(destPath, taskSettingsCopy);
                 };
                 WatchFolders.Add(watchFolder);
 
@@ -113,7 +127,7 @@ namespace ShareX
             }
         }
 
-        public void Dispose()
+        public void UnregisterAllWatchFolders()
         {
             if (WatchFolders != null)
             {
@@ -125,6 +139,11 @@ namespace ShareX
                     }
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            UnregisterAllWatchFolders();
         }
     }
 }

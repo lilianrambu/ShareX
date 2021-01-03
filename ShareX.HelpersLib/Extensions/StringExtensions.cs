@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,36 +24,43 @@
 #endregion License Information (GPL v3)
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace ShareX.HelpersLib
 {
     public static class StringExtensions
     {
+        public static bool Contains(this string str, string value, StringComparison comparisonType)
+        {
+            return str.IndexOf(value, comparisonType) >= 0;
+        }
+
         public static string Left(this string str, int length)
         {
-            if (length < 1) return string.Empty;
+            if (length < 1) return "";
             if (length < str.Length) return str.Substring(0, length);
             return str;
         }
 
         public static string Right(this string str, int length)
         {
-            if (length < 1) return string.Empty;
+            if (length < 1) return "";
             if (length < str.Length) return str.Substring(str.Length - length);
             return str;
         }
 
         public static string RemoveLeft(this string str, int length)
         {
-            if (length < 1) return string.Empty;
+            if (length < 1) return "";
             if (length < str.Length) return str.Remove(0, length);
             return str;
         }
 
         public static string RemoveRight(this string str, int length)
         {
-            if (length < 1) return string.Empty;
+            if (length < 1) return "";
             if (length < str.Length) return str.Remove(str.Length - length);
             return str;
         }
@@ -160,23 +167,49 @@ namespace ShareX.HelpersLib
             return text;
         }
 
-        public static string RemoveWhiteSpaces(this string str)
+        public static string BatchReplace(this string text, Dictionary<string, string> replace)
         {
-            StringBuilder result = new StringBuilder();
+            StringBuilder sb = new StringBuilder();
 
-            foreach (char c in str)
+            for (int i = 0; i < text.Length; i++)
             {
-                if (!Char.IsWhiteSpace(c)) result.Append(c);
+                string current = text.Substring(i);
+
+                bool replaced = false;
+
+                foreach (KeyValuePair<string, string> entry in replace)
+                {
+                    if (current.StartsWith(entry.Key))
+                    {
+                        if (!string.IsNullOrEmpty(entry.Value))
+                        {
+                            sb.Append(entry.Value);
+                        }
+                        i += entry.Key.Length - 1;
+                        replaced = true;
+                        continue;
+                    }
+                }
+
+                if (!replaced)
+                {
+                    sb.Append(text[i]);
+                }
             }
 
-            return result.ToString();
+            return sb.ToString();
+        }
+
+        public static string RemoveWhiteSpaces(this string str)
+        {
+            return new string(str.Where(c => !char.IsWhiteSpace(c)).ToArray());
         }
 
         public static string Reverse(this string str)
         {
             char[] chars = str.ToCharArray();
             Array.Reverse(chars);
-            return new String(chars);
+            return new string(chars);
         }
 
         public static string Truncate(this string str, int maxLength)
@@ -209,16 +242,6 @@ namespace ShareX.HelpersLib
             }
 
             return str;
-        }
-
-        public static bool IsValidUrl(this string url)
-        {
-            return Uri.IsWellFormedUriString(url.Trim(), UriKind.Absolute);
-        }
-
-        public static string CombineURL(this string url, string url2)
-        {
-            return URLHelpers.CombineURL(url, url2);
         }
 
         public static byte[] HexToBytes(this string hex)
@@ -254,17 +277,72 @@ namespace ShareX.HelpersLib
 
         public static bool IsNumber(this string text)
         {
-            foreach (char c in text)
-            {
-                if (!char.IsNumber(c)) return false;
-            }
-
-            return true;
+            int num;
+            return int.TryParse(text, out num);
         }
 
         public static string[] Lines(this string text)
         {
             return text.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
+        }
+
+        public static IEnumerable<Tuple<string, string>> ForEachBetween(this string text, string front, string back)
+        {
+            int f = 0;
+            int b = 0;
+            while (text.Length > f && (f = text.IndexOf(front, f)) >= 0 && (b = text.IndexOf(back, f + front.Length)) >= 0)
+            {
+                string result = text.Substring(f, (b + back.Length) - f);
+                yield return new Tuple<string, string>(result, result.Substring(front.Length, (result.Length - back.Length) - front.Length));
+                f += front.Length;
+            }
+        }
+
+        public static int FromBase(this string text, int radix, string digits)
+        {
+            if (string.IsNullOrEmpty(digits))
+            {
+                throw new ArgumentNullException("digits", string.Format("Digits must contain character value representations"));
+            }
+
+            radix = Math.Abs(radix);
+            if (radix > digits.Length || radix < 2)
+            {
+                throw new ArgumentOutOfRangeException("radix", radix, string.Format("Radix has to be > 2 and < {0}", digits.Length));
+            }
+
+            // Convert to Base 10
+            int value = 0;
+            if (!string.IsNullOrEmpty(text))
+            {
+                for (int i = text.Length - 1; i >= 0; --i)
+                {
+                    int temp = digits.IndexOf(text[i]) * (int)Math.Pow(radix, text.Length - (i + 1));
+                    if (temp < 0)
+                    {
+                        throw new IndexOutOfRangeException("Text contains characters not found in digits.");
+                    }
+                    value += temp;
+                }
+            }
+            return value;
+        }
+
+        public static string ToBase(this string text, int fromRadix, string fromDigits, int toRadix, string toDigits)
+        {
+            return text.FromBase(fromRadix, fromDigits).ToBase(toRadix, toDigits);
+        }
+
+        public static string ToBase(this string text, int from, int to, string digits)
+        {
+            return text.FromBase(from, digits).ToBase(to, digits);
+        }
+
+        public static string PadCenter(this string str, int totalWidth, char paddingChar = ' ')
+        {
+            int padding = totalWidth - str.Length;
+            int padLeft = (padding / 2) + str.Length;
+            return str.PadLeft(padLeft, paddingChar).PadRight(totalWidth, paddingChar);
         }
     }
 }

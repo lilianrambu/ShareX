@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -30,12 +30,30 @@ namespace ShareX.HelpersLib
 {
     public class SplitContainerCustomSplitter : SplitContainer
     {
+        public Color SplitterColor { get; set; } = Color.White;
+        public Color SplitterLineColor { get; set; } = ProfessionalColors.SeparatorDark;
+
         protected override void OnPaint(PaintEventArgs pevent)
         {
             Graphics g = pevent.Graphics;
             Rectangle rect = SplitterRectangle;
-            g.DrawLine(Pens.Black, rect.Left, rect.Top, rect.Left, rect.Bottom - 1);
-            g.DrawLine(Pens.Black, rect.Right - 1, rect.Top, rect.Right - 1, rect.Bottom - 1);
+
+            using (Brush brush = new SolidBrush(SplitterColor))
+            using (Pen pen = new Pen(SplitterLineColor))
+            {
+                g.FillRectangle(brush, rect);
+
+                if (Orientation == Orientation.Horizontal)
+                {
+                    g.DrawLine(pen, rect.Left, rect.Top, rect.Right - 1, rect.Top);
+                    g.DrawLine(pen, rect.Left, rect.Bottom - 1, rect.Right - 1, rect.Bottom - 1);
+                }
+                else if (Orientation == Orientation.Vertical)
+                {
+                    g.DrawLine(pen, rect.Left, rect.Top, rect.Left, rect.Bottom - 1);
+                    g.DrawLine(pen, rect.Right - 1, rect.Top, rect.Right - 1, rect.Bottom - 1);
+                }
+            }
         }
     }
 }

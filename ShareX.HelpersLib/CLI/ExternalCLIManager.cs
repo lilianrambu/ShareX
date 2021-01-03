@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -35,34 +35,53 @@ namespace ShareX.HelpersLib
         public event DataReceivedEventHandler OutputDataReceived;
         public event DataReceivedEventHandler ErrorDataReceived;
 
-        private Process process = new Process();
+        public bool IsProcessRunning { get; private set; }
+
+        protected Process process;
 
         public virtual int Open(string path, string args = null)
         {
-            DebugHelper.WriteLine("CLI: \"{0}\" {1}", path, args);
-
             if (File.Exists(path))
             {
-                ProcessStartInfo psi = new ProcessStartInfo(path);
-                psi.UseShellExecute = false;
-                psi.CreateNoWindow = true;
-                psi.RedirectStandardInput = true;
-                psi.RedirectStandardOutput = true;
-                psi.RedirectStandardError = true;
-                psi.Arguments = args;
-                psi.WorkingDirectory = Path.GetDirectoryName(path);
-                psi.StandardOutputEncoding = Encoding.UTF8;
-                psi.StandardErrorEncoding = Encoding.UTF8;
+                using (process = new Process())
+                {
+                    ProcessStartInfo psi = new ProcessStartInfo()
+                    {
+                        FileName = path,
+                        WorkingDirectory = Path.GetDirectoryName(path),
+                        Arguments = args,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardInput = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        StandardOutputEncoding = Encoding.UTF8,
+                        StandardErrorEncoding = Encoding.UTF8
+                    };
 
-                process.EnableRaisingEvents = true;
-                if (psi.RedirectStandardOutput) process.OutputDataReceived += cli_OutputDataReceived;
-                if (psi.RedirectStandardError) process.ErrorDataReceived += cli_ErrorDataReceived;
-                process.StartInfo = psi;
-                process.Start();
-                if (psi.RedirectStandardOutput) process.BeginOutputReadLine();
-                if (psi.RedirectStandardError) process.BeginErrorReadLine();
-                process.WaitForExit();
-                return process.ExitCode;
+                    process.EnableRaisingEvents = true;
+                    if (psi.RedirectStandardOutput) process.OutputDataReceived += cli_OutputDataReceived;
+                    if (psi.RedirectStandardError) process.ErrorDataReceived += cli_ErrorDataReceived;
+                    process.StartInfo = psi;
+
+                    DebugHelper.WriteLine($"CLI: \"{psi.FileName}\" {psi.Arguments}");
+                    process.Start();
+
+                    if (psi.RedirectStandardOutput) process.BeginOutputReadLine();
+                    if (psi.RedirectStandardError) process.BeginErrorReadLine();
+
+                    try
+                    {
+                        IsProcessRunning = true;
+                        process.WaitForExit();
+                    }
+                    finally
+                    {
+                        IsProcessRunning = false;
+                    }
+
+                    return process.ExitCode;
+                }
             }
 
             return -1;
@@ -92,7 +111,7 @@ namespace ShareX.HelpersLib
 
         public void WriteInput(string input)
         {
-            if (process != null && process.StartInfo != null && process.StartInfo.RedirectStandardInput)
+            if (IsProcessRunning && process != null && process.StartInfo != null && process.StartInfo.RedirectStandardInput)
             {
                 process.StandardInput.WriteLine(input);
             }
@@ -100,7 +119,7 @@ namespace ShareX.HelpersLib
 
         public virtual void Close()
         {
-            if (process != null)
+            if (IsProcessRunning && process != null)
             {
                 process.CloseMainWindow();
             }

@@ -1,3 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -117,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="btnCancel.Text" xml:space="preserve">
-    <value>Abandon</value>
+    <value>Annuler</value>
   </data>
   <data name="lblIssueId.Text" xml:space="preserve">
-    <value>ID du problème:</value>
+    <value>ID du problème :</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>Mise en ligne Jira</value>
+    <value>ShareX - Mise en ligne de fichiers Jira</value>
   </data>
   <data name="gpSummary.Text" xml:space="preserve">
     <value>Résumé</value>

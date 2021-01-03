@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -29,23 +29,24 @@ using System.Windows.Forms;
 
 namespace ShareX.HelpersLib
 {
-    public delegate UpdateChecker CheckUpdate();
-
     public partial class UpdateCheckerLabel : UserControl
     {
+        public bool IsBusy { get; private set; }
+
         private UpdateChecker updateChecker;
-        private bool isBusy;
 
         public UpdateCheckerLabel()
         {
             InitializeComponent();
         }
 
-        public void CheckUpdate(CheckUpdate checkUpdate)
+        public void CheckUpdate(UpdateChecker updateChecker)
         {
-            if (!isBusy)
+            if (!IsBusy)
             {
-                isBusy = true;
+                IsBusy = true;
+
+                this.updateChecker = updateChecker;
 
                 lblStatus.Visible = false;
                 llblUpdateAvailable.Visible = false;
@@ -53,17 +54,37 @@ namespace ShareX.HelpersLib
                 pbLoading.Visible = true;
                 lblCheckingUpdates.Visible = true;
 
-                Thread thread = new Thread(() => CheckingUpdate(checkUpdate));
+                Thread thread = new Thread(CheckingUpdate);
                 thread.IsBackground = true;
                 thread.Start();
             }
         }
 
-        private void CheckingUpdate(CheckUpdate checkUpdate)
+        public void UpdateLoadingImage()
         {
-            updateChecker = checkUpdate();
-            UpdateControls();
-            isBusy = false;
+            if (ShareXResources.IsDarkTheme)
+            {
+                pbLoading.Image = Resources.LoadingSmallWhite;
+            }
+            else
+            {
+                pbLoading.Image = Resources.LoadingSmallBlack;
+            }
+        }
+
+        private void CheckingUpdate()
+        {
+            updateChecker.CheckUpdate();
+
+            try
+            {
+                UpdateControls();
+            }
+            catch
+            {
+            }
+
+            IsBusy = false;
         }
 
         private void UpdateControls()
@@ -93,18 +114,7 @@ namespace ShareX.HelpersLib
 
         private void llblUpdateAvailable_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            if (updateChecker != null && updateChecker.Status == UpdateStatus.UpdateAvailable)
-            {
-                using (DownloaderForm updaterForm = new DownloaderForm(updateChecker))
-                {
-                    updaterForm.ShowDialog();
-
-                    if (updaterForm.Status == DownloaderFormStatus.InstallStarted)
-                    {
-                        Application.Exit();
-                    }
-                }
-            }
+            UpdateMessageBox.Start(updateChecker);
         }
     }
 }

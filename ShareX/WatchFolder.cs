@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -49,11 +49,12 @@ namespace ShareX
         {
             Dispose();
 
-            if (!string.IsNullOrEmpty(Settings.FolderPath) && Directory.Exists(Settings.FolderPath))
+            string folderPath = Helpers.ExpandFolderVariables(Settings.FolderPath);
+            if (!string.IsNullOrEmpty(folderPath) && Directory.Exists(folderPath))
             {
                 context = SynchronizationContext.Current ?? new SynchronizationContext();
 
-                fileWatcher = new FileSystemWatcher(Settings.FolderPath);
+                fileWatcher = new FileSystemWatcher(folderPath);
                 if (!string.IsNullOrEmpty(Settings.Filter)) fileWatcher.Filter = Settings.Filter;
                 fileWatcher.IncludeSubdirectories = Settings.IncludeSubdirectories;
                 fileWatcher.Created += fileWatcher_Created;
@@ -69,7 +70,7 @@ namespace ShareX
             }
         }
 
-        private void fileWatcher_Created(object sender, FileSystemEventArgs e)
+        private async void fileWatcher_Created(object sender, FileSystemEventArgs e)
         {
             CleanElapsedTimers();
 
@@ -85,8 +86,30 @@ namespace ShareX
 
             timers.Add(new WatchFolderDuplicateEventTimer(path));
 
-            Action onCompleted = () => context.Post(state => OnFileWatcherTrigger(path), null);
-            Helpers.WaitWhileAsync(() => Helpers.IsFileLocked(path), 250, 5000, onCompleted, 1000);
+            int successCount = 0;
+            long previousSize = -1;
+
+            await Helpers.WaitWhileAsync(() =>
+            {
+                if (!Helpers.IsFileLocked(path))
+                {
+                    long currentSize = Helpers.GetFileSize(path);
+
+                    if (currentSize > 0 && currentSize == previousSize)
+                    {
+                        successCount++;
+                    }
+
+                    previousSize = currentSize;
+                    return successCount < 4;
+                }
+
+                previousSize = -1;
+                return true;
+            }, 250, 5000, () =>
+            {
+                context.Post(state => OnFileWatcherTrigger(path), null);
+            }, 1000);
         }
 
         protected void CleanElapsedTimers()

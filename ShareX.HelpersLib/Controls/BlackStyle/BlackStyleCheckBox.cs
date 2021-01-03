@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -49,7 +49,7 @@ namespace ShareX.HelpersLib
 
                     OnCheckedChanged(EventArgs.Empty);
 
-                    Refresh();
+                    Invalidate();
                 }
             }
         }
@@ -71,14 +71,18 @@ namespace ShareX.HelpersLib
                 {
                     text = value;
 
-                    Refresh();
+                    Invalidate();
                 }
             }
         }
 
+        [DefaultValue(3)]
         public int SpaceAfterCheckBox { get; set; }
 
-        private bool isChecked;
+        [DefaultValue(false)]
+        public bool IgnoreClick { get; set; }
+
+        private bool isChecked, isHover;
         private string text;
 
         private LinearGradientBrush backgroundBrush, backgroundCheckedBrush, innerBorderBrush, innerBorderCheckedBrush;
@@ -94,11 +98,7 @@ namespace ShareX.HelpersLib
 
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw | ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
 
-            Prepare();
-        }
-
-        private void Prepare()
-        {
+            BackColor = Color.Transparent;
             ForeColor = Color.White;
 
             // http://connect.microsoft.com/VisualStudio/feedback/details/348321/bug-in-fillrectangle-using-lineargradientbrush
@@ -135,6 +135,40 @@ namespace ShareX.HelpersLib
             }
         }
 
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            base.OnMouseEnter(e);
+
+            isHover = true;
+            Invalidate();
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            base.OnMouseLeave(e);
+
+            isHover = false;
+            Invalidate();
+        }
+
+        protected override void OnClick(EventArgs e)
+        {
+            base.OnClick(e);
+
+            if (!IgnoreClick)
+            {
+                Checked = !Checked;
+            }
+        }
+
+        protected virtual void OnCheckedChanged(EventArgs e)
+        {
+            if (CheckedChanged != null)
+            {
+                CheckedChanged(this, e);
+            }
+        }
+
         private void DrawBackground(Graphics g)
         {
             if (Checked)
@@ -145,7 +179,15 @@ namespace ShareX.HelpersLib
             else
             {
                 g.FillRectangle(backgroundBrush, new Rectangle(2, 2, checkBoxSize - 4, checkBoxSize - 4));
-                g.DrawRectangle(innerBorderPen, new Rectangle(1, 1, checkBoxSize - 3, checkBoxSize - 3));
+
+                if (isHover)
+                {
+                    g.DrawRectangle(innerBorderCheckedPen, new Rectangle(1, 1, checkBoxSize - 3, checkBoxSize - 3));
+                }
+                else
+                {
+                    g.DrawRectangle(innerBorderPen, new Rectangle(1, 1, checkBoxSize - 3, checkBoxSize - 3));
+                }
             }
 
             g.DrawRectangle(borderPen, new Rectangle(0, 0, checkBoxSize - 1, checkBoxSize - 1));
@@ -154,24 +196,9 @@ namespace ShareX.HelpersLib
         private void DrawText(Graphics g)
         {
             Rectangle rect = new Rectangle(checkBoxSize + SpaceAfterCheckBox, 0, ClientRectangle.Width - checkBoxSize + SpaceAfterCheckBox, ClientRectangle.Height);
-            TextFormatFlags tff = TextFormatFlags.Left | TextFormatFlags.Top;
+            TextFormatFlags tff = TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.WordBreak;
             TextRenderer.DrawText(g, Text, Font, new Rectangle(rect.X, rect.Y + 1, rect.Width, rect.Height + 1), Color.Black, tff);
             TextRenderer.DrawText(g, Text, Font, rect, ForeColor, tff);
-        }
-
-        protected override void OnClick(EventArgs e)
-        {
-            base.OnClick(e);
-
-            Checked = !Checked;
-        }
-
-        protected virtual void OnCheckedChanged(EventArgs e)
-        {
-            if (CheckedChanged != null)
-            {
-                CheckedChanged(this, e);
-            }
         }
 
         protected override void Dispose(bool disposing)

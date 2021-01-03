@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -26,50 +26,71 @@
 using ShareX.HelpersLib;
 using ShareX.Properties;
 using System;
-using System.Drawing;
+using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace ShareX
 {
     public partial class AfterCaptureForm : Form
     {
-        public AfterCaptureTasks AfterCaptureTasks { get; private set; }
-        public AfterCaptureFormResult Result { get; private set; }
+        public TaskSettings TaskSettings { get; private set; }
+        public string FileName { get; private set; }
 
-        public AfterCaptureForm(Image img, TaskSettings taskSettings)
+        private AfterCaptureForm(TaskSettings taskSettings)
         {
+            TaskSettings = taskSettings;
+
             InitializeComponent();
-            Icon = ShareXResources.Icon;
+            ShareXResources.ApplyTheme(this);
 
             ImageList imageList = new ImageList { ColorDepth = ColorDepth.Depth32Bit };
             imageList.Images.Add(Resources.checkbox_uncheck);
             imageList.Images.Add(Resources.checkbox_check);
             lvAfterCaptureTasks.SmallImageList = imageList;
+            lvAfterUploadTasks.SmallImageList = imageList;
 
-            ucBeforeUpload.InitCapture(taskSettings);
+            ucBeforeUpload.InitCapture(TaskSettings);
 
-            AfterCaptureTasks = taskSettings.AfterCaptureJob;
-            AddAfterCaptureItems(AfterCaptureTasks);
-
-            btnCopy.Visible = img != null;
-
-            if (img != null)
-            {
-                pbImage.LoadImage(img);
-            }
+            AddAfterCaptureItems(TaskSettings.AfterCaptureJob);
+            AddAfterUploadItems(TaskSettings.AfterUploadJob);
         }
 
-        private void AddAfterCaptureItems(AfterCaptureTasks afterCaptureTasks)
+        public AfterCaptureForm(ImageInfo imageInfo, TaskSettings taskSettings) : this(taskSettings)
         {
-            AfterCaptureTasks[] enums = Helpers.GetEnums<AfterCaptureTasks>();
-
-            for (int i = 1; i < enums.Length; i++)
+            if (imageInfo != null && imageInfo.Image != null)
             {
-                ListViewItem lvi = new ListViewItem(enums[i].GetLocalizedDescription());
-                CheckItem(lvi, afterCaptureTasks.HasFlag(1 << (i - 1)));
-                lvi.Tag = enums[i];
-                lvAfterCaptureTasks.Items.Add(lvi);
+                pbImage.LoadImage(imageInfo.Image);
+                btnCopy.Enabled = true;
             }
+
+            FileName = TaskHelpers.GetFilename(TaskSettings, null, imageInfo);
+            txtFileName.Text = FileName;
+        }
+
+        public AfterCaptureForm(string filePath, TaskSettings taskSettings) : this(taskSettings)
+        {
+            if (Helpers.IsImageFile(filePath))
+            {
+                pbImage.LoadImageFromFileAsync(filePath);
+            }
+
+            FileName = Path.GetFileNameWithoutExtension(filePath);
+            txtFileName.Text = FileName;
+        }
+
+        private void AfterCaptureForm_Shown(object sender, EventArgs e)
+        {
+            this.ForceActivate();
+        }
+
+        private void Continue()
+        {
+            TaskSettings.AfterCaptureJob = GetAfterCaptureTasks();
+            TaskSettings.AfterUploadJob = GetAfterUploadTasks();
+            FileName = txtFileName.Text;
+            DialogResult = DialogResult.OK;
+            Close();
         }
 
         private void CheckItem(ListViewItem lvi, bool check)
@@ -82,6 +103,29 @@ namespace ShareX
             return lvi.ImageIndex == 1;
         }
 
+        private void AddAfterCaptureItems(AfterCaptureTasks afterCaptureTasks)
+        {
+            AfterCaptureTasks[] ignore = new AfterCaptureTasks[] { AfterCaptureTasks.None, AfterCaptureTasks.ShowQuickTaskMenu, AfterCaptureTasks.ShowAfterCaptureWindow };
+            int itemHeight = 0;
+
+            foreach (AfterCaptureTasks task in Helpers.GetEnums<AfterCaptureTasks>())
+            {
+                if (ignore.Any(x => x == task)) continue;
+                ListViewItem lvi = new ListViewItem(task.GetLocalizedDescription());
+                CheckItem(lvi, afterCaptureTasks.HasFlag(task));
+                lvi.Tag = task;
+                lvAfterCaptureTasks.Items.Add(lvi);
+
+                if (itemHeight == 0)
+                    itemHeight = lvi.Bounds.Height;
+            }
+
+            int newListViewHeight = lvAfterCaptureTasks.Items.Count * itemHeight;
+            int listViewHeightDifference = newListViewHeight - lvAfterCaptureTasks.Height;
+            if (listViewHeightDifference > 0)
+                Height += listViewHeightDifference;
+        }
+
         private AfterCaptureTasks GetAfterCaptureTasks()
         {
             AfterCaptureTasks afterCaptureTasks = AfterCaptureTasks.None;
@@ -92,18 +136,11 @@ namespace ShareX
 
                 if (IsChecked(lvi))
                 {
-                    afterCaptureTasks = afterCaptureTasks.Add((AfterCaptureTasks)(1 << i));
+                    afterCaptureTasks = afterCaptureTasks.Add((AfterCaptureTasks)lvi.Tag);
                 }
             }
 
             return afterCaptureTasks;
-        }
-
-        private void Close(AfterCaptureFormResult result)
-        {
-            AfterCaptureTasks = GetAfterCaptureTasks();
-            Result = result;
-            Close();
         }
 
         private void lvAfterCaptureTasks_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
@@ -124,19 +161,80 @@ namespace ShareX
             }
         }
 
-        private void btnContinue_Click(object sender, EventArgs e)
+        private void AddAfterUploadItems(AfterUploadTasks afterUploadTasks)
         {
-            Close(AfterCaptureFormResult.Continue);
+            AfterUploadTasks[] ignore = new AfterUploadTasks[] { AfterUploadTasks.None };
+
+            foreach (AfterUploadTasks task in Helpers.GetEnums<AfterUploadTasks>())
+            {
+                if (ignore.Any(x => x == task)) continue;
+                ListViewItem lvi = new ListViewItem(task.GetLocalizedDescription());
+                CheckItem(lvi, afterUploadTasks.HasFlag(task));
+                lvi.Tag = task;
+                lvAfterUploadTasks.Items.Add(lvi);
+            }
         }
 
-        private void btnCancel_Click(object sender, EventArgs e)
+        private AfterUploadTasks GetAfterUploadTasks()
         {
-            Close();
+            AfterUploadTasks afterUploadTasks = AfterUploadTasks.None;
+
+            for (int i = 0; i < lvAfterUploadTasks.Items.Count; i++)
+            {
+                ListViewItem lvi = lvAfterUploadTasks.Items[i];
+
+                if (IsChecked(lvi))
+                {
+                    afterUploadTasks = afterUploadTasks.Add((AfterUploadTasks)lvi.Tag);
+                }
+            }
+
+            return afterUploadTasks;
+        }
+
+        private void lvAfterUploadTasks_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
+        {
+            e.Item.Selected = false;
+        }
+
+        private void lvAfterUploadTasks_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                ListViewItem lvi = lvAfterUploadTasks.GetItemAt(e.X, e.Y);
+
+                if (lvi != null)
+                {
+                    CheckItem(lvi, !IsChecked(lvi));
+                }
+            }
+        }
+
+        private void txtFileName_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyData == Keys.Enter)
+            {
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void txtFileName_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyData == Keys.Enter)
+            {
+                Continue();
+            }
+        }
+
+        private void btnContinue_Click(object sender, EventArgs e)
+        {
+            Continue();
         }
 
         private void btnCopy_Click(object sender, EventArgs e)
         {
-            Close(AfterCaptureFormResult.Copy);
+            TaskSettings.AfterCaptureJob = AfterCaptureTasks.CopyImageToClipboard;
+            FileName = txtFileName.Text;
         }
     }
 }

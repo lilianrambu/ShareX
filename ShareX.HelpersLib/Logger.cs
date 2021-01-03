@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,9 +24,11 @@
 #endregion License Information (GPL v3)
 
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ShareX.HelpersLib
 {
@@ -36,9 +38,27 @@ namespace ShareX.HelpersLib
 
         public event MessageAddedEventHandler MessageAdded;
 
+        public string MessageFormat { get; set; } = "{0:yyyy-MM-dd HH:mm:ss.fff} - {1}";
+        public bool AsyncWrite { get; set; } = true;
+        public bool DebugWrite { get; set; } = true;
+        public bool StringWrite { get; set; } = true;
+        public bool FileWrite { get; set; } = false;
+        public string LogFilePath { get; private set; }
+
         private readonly object loggerLock = new object();
-        private StringBuilder sbMessages = new StringBuilder(4096);
-        private int lastSaveIndex;
+        private ConcurrentQueue<string> messageQueue = new ConcurrentQueue<string>();
+        private StringBuilder sbMessages = new StringBuilder();
+
+        public Logger()
+        {
+        }
+
+        public Logger(string logFilePath)
+        {
+            FileWrite = true;
+            LogFilePath = logFilePath;
+            Helpers.CreateDirectoryFromFilePath(LogFilePath);
+        }
 
         protected void OnMessageAdded(string message)
         {
@@ -48,19 +68,65 @@ namespace ShareX.HelpersLib
             }
         }
 
-        public void WriteLine(string message = "")
+        private void ProcessMessageQueue()
         {
             lock (loggerLock)
             {
-                if (!string.IsNullOrEmpty(message))
+                while (messageQueue.TryDequeue(out string message))
                 {
-                    message = string.Format("{0:yyyy-MM-dd HH:mm:ss.fff} - {1}", FastDateTime.Now, message);
-                }
+                    if (DebugWrite)
+                    {
+                        Debug.Write(message);
+                    }
 
-                sbMessages.AppendLine(message);
-                Debug.WriteLine(message);
-                OnMessageAdded(message);
+                    if (StringWrite && sbMessages != null)
+                    {
+                        sbMessages.Append(message);
+                    }
+
+                    if (FileWrite && !string.IsNullOrEmpty(LogFilePath))
+                    {
+                        try
+                        {
+                            File.AppendAllText(LogFilePath, message, Encoding.UTF8);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.WriteLine(e);
+                        }
+                    }
+
+                    OnMessageAdded(message);
+                }
             }
+        }
+
+        public void Write(string message)
+        {
+            if (message != null)
+            {
+                message = string.Format(MessageFormat, DateTime.Now, message);
+                messageQueue.Enqueue(message);
+
+                if (AsyncWrite)
+                {
+                    Task.Run(() => ProcessMessageQueue());
+                }
+                else
+                {
+                    ProcessMessageQueue();
+                }
+            }
+        }
+
+        public void Write(string format, params object[] args)
+        {
+            Write(string.Format(format, args));
+        }
+
+        public void WriteLine(string message)
+        {
+            Write(message + Environment.NewLine);
         }
 
         public void WriteLine(string format, params object[] args)
@@ -70,7 +136,7 @@ namespace ShareX.HelpersLib
 
         public void WriteException(string exception, string message = "Exception")
         {
-            WriteLine("{0}:{1}{2}", message, Environment.NewLine, exception);
+            WriteLine($"{message}:{Environment.NewLine}{exception}");
         }
 
         public void WriteException(Exception exception, string message = "Exception")
@@ -78,30 +144,14 @@ namespace ShareX.HelpersLib
             WriteException(exception.ToString(), message);
         }
 
-        public void SaveLog(string filepath)
-        {
-            lock (loggerLock)
-            {
-                if (sbMessages != null && sbMessages.Length > 0 && !string.IsNullOrEmpty(filepath))
-                {
-                    string messages = sbMessages.ToString(lastSaveIndex, sbMessages.Length - lastSaveIndex);
-
-                    if (!string.IsNullOrEmpty(messages))
-                    {
-                        Helpers.CreateDirectoryIfNotExist(filepath);
-                        File.AppendAllText(filepath, messages, Encoding.UTF8);
-                        lastSaveIndex = sbMessages.Length;
-                    }
-                }
-            }
-        }
-
         public void Clear()
         {
             lock (loggerLock)
             {
-                sbMessages.Length = 0;
-                lastSaveIndex = 0;
+                if (sbMessages != null)
+                {
+                    sbMessages.Clear();
+                }
             }
         }
 

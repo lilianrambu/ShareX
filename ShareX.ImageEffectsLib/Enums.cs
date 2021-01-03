@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -23,11 +23,31 @@
 
 #endregion License Information (GPL v3)
 
+using System.ComponentModel;
+
 namespace ShareX.ImageEffectsLib
 {
     public enum WatermarkType
     {
         Text,
         Image
+    }
+
+    public enum ResizeMode
+    {
+        [Description("Resizes all images to the specified size.")]
+        ResizeAll,
+        [Description("Only resize image if it is bigger than specified size.")]
+        ResizeIfBigger,
+        [Description("Only resize image if it is smaller than specified size.")]
+        ResizeIfSmaller
+    }
+
+    public enum DrawImageSizeMode // Localized
+    {
+        DontResize,
+        AbsoluteSize,
+        PercentageOfWatermark,
+        PercentageOfCanvas
     }
 }

@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -41,7 +41,7 @@ namespace ShareX.HelpersLib
 
                 string[] splitPath = path.Split('/');
 
-                if (splitPath != null && splitPath.Length > 0)
+                if (splitPath.Length > 0)
                 {
                     foreach (string name in splitPath)
                     {
@@ -155,7 +155,7 @@ namespace ShareX.HelpersLib
                 if (xeItem != null) return xeItem.Value;
             }
 
-            return string.Empty;
+            return "";
         }
 
         public static string GetAttributeValue(this XElement xe, string name)
@@ -166,7 +166,7 @@ namespace ShareX.HelpersLib
                 if (xaItem != null) return xaItem.Value;
             }
 
-            return string.Empty;
+            return "";
         }
 
         public static string GetAttributeFirstValue(this XElement xe, params string[] names)
@@ -181,7 +181,7 @@ namespace ShareX.HelpersLib
                 }
             }
 
-            return string.Empty;
+            return "";
         }
 
         public static XmlNode AppendElement(this XmlNode parent, string tagName)

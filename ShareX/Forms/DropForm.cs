@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -36,12 +36,14 @@ namespace ShareX
     {
         private static DropForm instance;
 
-        public static DropForm GetInstance(int size, int offset, ContentAlignment alignment, int opacity, int hoverOpacity)
+        public static DropForm GetInstance(int size, int offset, ContentAlignment alignment, int opacity, int hoverOpacity, TaskSettings taskSettings = null)
         {
             if (instance == null || instance.IsDisposed)
             {
                 instance = new DropForm(size, offset, alignment, opacity, hoverOpacity);
             }
+
+            instance.taskSettings = taskSettings;
 
             return instance;
         }
@@ -54,20 +56,21 @@ namespace ShareX
 
         private Bitmap backgroundImage;
         private bool isHovered;
+        private TaskSettings taskSettings;
 
         private DropForm(int size, int offset, ContentAlignment alignment, int opacity, int hoverOpacity)
         {
             InitializeComponent();
 
-            DropSize = size.Between(10, 300);
+            DropSize = size.Clamp(10, 300);
             DropOffset = offset;
             DropAlignment = alignment;
-            DropOpacity = opacity.Between(1, 255);
-            DropHoverOpacity = hoverOpacity.Between(1, 255);
+            DropOpacity = opacity.Clamp(1, 255);
+            DropHoverOpacity = hoverOpacity.Clamp(1, 255);
 
             backgroundImage = DrawDropImage(DropSize);
 
-            Location = Helpers.GetPosition(DropAlignment, new Point(DropOffset, DropOffset), Screen.PrimaryScreen.WorkingArea.Size, backgroundImage.Size);
+            Location = Helpers.GetPosition(DropAlignment, DropOffset, Screen.PrimaryScreen.WorkingArea.Size, backgroundImage.Size);
 
             SelectBitmap(backgroundImage, DropOpacity);
         }
@@ -106,7 +109,7 @@ namespace ShareX
             if (e.Button == MouseButtons.Left)
             {
                 NativeMethods.ReleaseCapture();
-                NativeMethods.SendMessage(Handle, (uint)WindowsMessages.NCLBUTTONDOWN, (IntPtr)NativeMethods.HT_CAPTION, IntPtr.Zero);
+                NativeMethods.SendMessage(Handle, (uint)WindowsMessages.NCLBUTTONDOWN, (IntPtr)NativeConstants.HT_CAPTION, IntPtr.Zero);
             }
         }
 
@@ -114,7 +117,7 @@ namespace ShareX
         {
             if (e.Button == MouseButtons.Right)
             {
-                this.Close();
+                Close();
             }
         }
 
@@ -140,7 +143,7 @@ namespace ShareX
 
         private void DropForm_DragDrop(object sender, DragEventArgs e)
         {
-            UploadManager.DragDropUpload(e.Data);
+            UploadManager.DragDropUpload(e.Data, taskSettings);
 
             if (isHovered)
             {
@@ -187,11 +190,11 @@ namespace ShareX
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Cursor = Cursors.SizeAll;
-            this.Text = "DropForm";
-            this.AllowDrop = true;
+            components = new System.ComponentModel.Container();
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            Cursor = Cursors.SizeAll;
+            Text = "DropForm";
+            AllowDrop = true;
 
             MouseDown += DropForm_MouseDown;
             MouseUp += DropForm_MouseUp;

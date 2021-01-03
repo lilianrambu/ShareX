@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -23,44 +23,68 @@
 
 #endregion License Information (GPL v3)
 
+using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
 
+#if WindowsStore
+using Windows.ApplicationModel;
+#endif
+
 namespace ShareX
 {
+    public enum ShareXBuild
+    {
+        Debug,
+        Release,
+        Steam,
+        MicrosoftStore,
+        Unknown
+    }
+
     public enum SupportedLanguage
     {
         Automatic, // Localized
+        [Description("Nederlands (Dutch)")]
+        Dutch,
         [Description("English")]
         English,
-        [Description("Deutsch (German)")]
-        German,
         [Description("Français (French)")]
         French,
+        [Description("Deutsch (German)")]
+        German,
         [Description("Magyar (Hungarian)")]
         Hungarian,
+        [Description("Bahasa Indonesia (Indonesian)")]
+        Indonesian,
+        [Description("Italiano (Italian)")]
+        Italian,
+        [Description("日本語 (Japanese)")]
+        Japanese,
         [Description("한국어 (Korean)")]
         Korean,
+        [Description("Español mexicano (Mexican Spanish)")]
+        MexicanSpanish,
+        [Description("فارسی (Persian)")]
+        Persian,
+        [Description("Português (Portuguese)")]
+        Portuguese,
+        [Description("Português-Brasil (Portuguese-Brazil)")]
+        PortugueseBrazil,
+        [Description("Русский (Russian)")]
+        Russian,
         [Description("简体中文 (Simplified Chinese)")]
         SimplifiedChinese,
         [Description("Español (Spanish)")]
         Spanish,
+        [Description("繁體中文 (Traditional Chinese)")]
+        TraditionalChinese,
         [Description("Türkçe (Turkish)")]
-        Turkish
-    }
-
-    public enum EImageFormat
-    {
-        [Description("png")]
-        PNG,
-        [Description("jpg")]
-        JPEG,
-        [Description("gif")]
-        GIF,
-        [Description("bmp")]
-        BMP,
-        [Description("tif")]
-        TIFF
+        Turkish,
+        [Description("Українська (Ukrainian)")]
+        Ukrainian,
+        [Description("Tiếng Việt (Vietnamese)")]
+        Vietnamese
     }
 
     public enum TaskJob
@@ -70,112 +94,142 @@ namespace ShareX
         FileUpload,
         TextUpload,
         ShortenURL,
-        ShareURL
+        ShareURL,
+        Download,
+        DownloadUpload
+    }
+
+    public enum TaskStatus
+    {
+        InQueue,
+        Preparing,
+        Working,
+        Stopping,
+        Stopped,
+        Failed,
+        Completed,
+        History
     }
 
     [Flags]
     public enum AfterCaptureTasks // Localized
     {
         None = 0,
-        AddImageEffects = 1,
-        AnnotateImage = 1 << 1,
-        CopyImageToClipboard = 1 << 2,
-        SendImageToPrinter = 1 << 3,
-        SaveImageToFile = 1 << 4,
-        SaveImageToFileWithDialog = 1 << 5,
-        SaveThumbnailImageToFile = 1 << 6,
-        PerformActions = 1 << 7,
-        CopyFileToClipboard = 1 << 8,
-        CopyFilePathToClipboard = 1 << 9,
-        UploadImageToHost = 1 << 10,
-        DeleteFile = 1 << 11
+        ShowQuickTaskMenu = 1,
+        ShowAfterCaptureWindow = 1 << 1,
+        AddImageEffects = 1 << 2,
+        AnnotateImage = 1 << 3,
+        CopyImageToClipboard = 1 << 4,
+        SendImageToPrinter = 1 << 5,
+        SaveImageToFile = 1 << 6,
+        SaveImageToFileWithDialog = 1 << 7,
+        SaveThumbnailImageToFile = 1 << 8,
+        PerformActions = 1 << 9,
+        CopyFileToClipboard = 1 << 10,
+        CopyFilePathToClipboard = 1 << 11,
+        ShowInExplorer = 1 << 12,
+        ScanQRCode = 1 << 13,
+        DoOCR = 1 << 14,
+        ShowBeforeUploadWindow = 1 << 15,
+        UploadImageToHost = 1 << 16,
+        DeleteFile = 1 << 17
     }
 
     [Flags]
     public enum AfterUploadTasks // Localized
     {
         None = 0,
-        UseURLShortener = 1,
-        ShareURL = 1 << 1,
-        CopyURLToClipboard = 1 << 2,
-        OpenURL = 1 << 3,
-        ShowQRCode = 1 << 4
-    }
-
-    public enum AfterCaptureFormResult
-    {
-        Cancel,
-        Continue,
-        Copy
+        ShowAfterUploadWindow = 1,
+        UseURLShortener = 1 << 1,
+        ShareURL = 1 << 2,
+        CopyURLToClipboard = 1 << 3,
+        OpenURL = 1 << 4,
+        ShowQRCode = 1 << 5
     }
 
     public enum CaptureType
     {
-        Screen,
+        Fullscreen,
         Monitor,
         ActiveMonitor,
         Window,
         ActiveWindow,
-        RectangleWindow,
-        Rectangle,
-        RoundedRectangle,
-        Ellipse,
-        Triangle,
-        Diamond,
-        Polygon,
-        Freehand,
+        Region,
+        CustomRegion,
         LastRegion
     }
 
-    public enum HotkeyType // Localized
+    public enum ScreenRecordStartMethod
+    {
+        Region,
+        ActiveWindow,
+        CustomRegion,
+        LastRegion
+    }
+
+    [JsonConverter(typeof(HotkeyTypeEnumConverter))]
+    public enum HotkeyType // Localized + Category
     {
         None,
+        // Upload
         FileUpload,
         FolderUpload,
         ClipboardUpload,
         ClipboardUploadWithContentViewer,
+        UploadText,
         UploadURL,
         DragDropUpload,
+        ShortenURL,
         StopUploads,
+        // Screen capture
         PrintScreen,
         ActiveWindow,
         ActiveMonitor,
         RectangleRegion,
-        WindowRectangle,
-        RectangleAnnotate,
         RectangleLight,
         RectangleTransparent,
-        RoundedRectangleRegion,
-        EllipseRegion,
-        TriangleRegion,
-        DiamondRegion,
-        PolygonRegion,
-        FreeHandRegion,
+        CustomRegion,
         LastRegion,
-        ScreenRecorder,
-        StartScreenRecorder,
-        ScreenRecorderGIF,
-        StartScreenRecorderGIF,
+        ScrollingCapture,
+        TextCapture,
         AutoCapture,
         StartAutoCapture,
-        OpenScreenshotsFolder,
+        // Screen record
+        ScreenRecorder,
+        ScreenRecorderActiveWindow,
+        ScreenRecorderCustomRegion,
+        StartScreenRecorder,
+        ScreenRecorderGIF,
+        ScreenRecorderGIFActiveWindow,
+        ScreenRecorderGIFCustomRegion,
+        StartScreenRecorderGIF,
+        AbortScreenRecording,
+        // Tools
         ColorPicker,
         ScreenColorPicker,
-        Ruler,
-        FTPClient,
-        HashCheck,
-        IndexFolder,
+        ImageEditor,
         ImageEffects,
+        HashCheck,
+        DNSChanger,
         QRCode,
+        QRCodeDecodeFromScreen,
+        Ruler,
+        IndexFolder,
+        ImageCombiner,
+        ImageSplitter,
+        ImageThumbnailer,
+        VideoConverter,
+        VideoThumbnailer,
         TweetMessage,
-        Automate
-    }
-
-    public enum HotkeyStatus
-    {
-        Registered,
-        Failed,
-        NotConfigured
+        MonitorTest,
+        // Other
+        DisableHotkeys,
+        OpenMainWindow,
+        OpenScreenshotsFolder,
+        OpenHistory,
+        OpenImageHistory,
+        ToggleActionsToolbar,
+        ExitShareX
     }
 
     public enum PopUpNotificationType // Localized
@@ -188,10 +242,14 @@ namespace ShareX
     [DefaultValue(OpenUrl)]
     public enum ToastClickAction
     {
+        [Description("Close notification")]
+        CloseNotification,
         [Description("Annotate image")]
         AnnotateImage,
         [Description("Copy image to clipboard")]
         CopyImageToClipboard,
+        [Description("Copy URL")]
+        CopyUrl,
         [Description("Open file")]
         OpenFile,
         [Description("Open folder")]
@@ -199,7 +257,7 @@ namespace ShareX
         [Description("Open URL")]
         OpenUrl,
         [Description("Upload")]
-        Upload,
+        Upload
     }
 
     public enum FileExistAction // Localized
@@ -215,8 +273,56 @@ namespace ShareX
         Show, Hide, Automatic
     }
 
-    public enum ColorPickerFormat
+    public enum ImagePreviewLocation
     {
-        RGB, Hexadecimal
+        Side, Bottom
+    }
+
+    public enum ThumbnailTitleLocation
+    {
+        Top, Bottom
+    }
+
+    public enum ScreenRecordState
+    {
+        Waiting, BeforeStart, AfterStart, AfterRecordingStart, Encoding
+    }
+
+    public enum RegionCaptureType
+    {
+        Default, Light, Transparent
+    }
+
+#if !WindowsStore
+    public enum StartupState
+    {
+        Disabled,
+        DisabledByUser,
+        Enabled,
+        DisabledByPolicy,
+        EnabledByPolicy
+    }
+#else
+    public enum StartupState
+    {
+        Disabled = StartupTaskState.Disabled,
+        DisabledByUser = StartupTaskState.DisabledByUser,
+        Enabled = StartupTaskState.Enabled,
+        DisabledByPolicy = StartupTaskState.DisabledByPolicy,
+        EnabledByPolicy = StartupTaskState.EnabledByPolicy
+    }
+#endif
+
+    public enum BalloonTipClickAction
+    {
+        None,
+        OpenURL,
+        OpenDebugLog
+    }
+
+    public enum TaskViewMode
+    {
+        ListView,
+        ThumbnailView
     }
 }

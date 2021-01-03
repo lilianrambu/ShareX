@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,18 +24,40 @@
 #endregion License Information (GPL v3)
 
 // Credits: https://github.com/BallisticLingonberries
-// API Information: https://docs.pushbullet.com/http/
 
 using Newtonsoft.Json;
 using ShareX.HelpersLib;
+using ShareX.UploadersLib.Properties;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace ShareX.UploadersLib.FileUploaders
 {
+    public class PushbulletFileUploaderService : FileUploaderService
+    {
+        public override FileDestination EnumValue { get; } = FileDestination.Pushbullet;
+
+        public override Icon ServiceIcon => Resources.Pushbullet;
+
+        public override bool CheckConfig(UploadersConfig config)
+        {
+            return config.PushbulletSettings != null && !string.IsNullOrEmpty(config.PushbulletSettings.UserAPIKey) &&
+                config.PushbulletSettings.DeviceList != null && config.PushbulletSettings.DeviceList.IsValidIndex(config.PushbulletSettings.SelectedDevice);
+        }
+
+        public override GenericUploader CreateUploader(UploadersConfig config, TaskReferenceHelper taskInfo)
+        {
+            return new Pushbullet(config.PushbulletSettings);
+        }
+
+        public override TabPage GetUploadersConfigTabPage(UploadersConfigForm form) => form.tpPushbullet;
+    }
+
     public sealed class Pushbullet : FileUploader
     {
         public PushbulletSettings Config { get; private set; }
@@ -54,13 +76,13 @@ namespace ShareX.UploadersLib.FileUploaders
 
         public UploadResult PushFile(Stream stream, string fileName)
         {
-            NameValueCollection headers = CreateAuthenticationHeader(Config.UserAPIKey, "");
+            NameValueCollection headers = RequestHelpers.CreateAuthenticationHeader(Config.UserAPIKey, "");
 
             Dictionary<string, string> pushArgs, upArgs = new Dictionary<string, string>();
 
             upArgs.Add("file_name", fileName);
 
-            string uploadRequest = SendRequest(HttpMethod.POST, apiRequestFileUploadURL, upArgs, headers);
+            string uploadRequest = SendRequestMultiPart(apiRequestFileUploadURL, upArgs, headers);
 
             if (uploadRequest == null) return null;
 
@@ -79,7 +101,7 @@ namespace ShareX.UploadersLib.FileUploaders
             upArgs.Add("policy", fileInfo.data.policy);
             upArgs.Add("content-type", fileInfo.data.content_type);
 
-            UploadResult uploadResult = UploadData(stream, fileInfo.upload_url, fileName, "file", upArgs);
+            UploadResult uploadResult = SendRequestFile(fileInfo.upload_url, stream, fileName, "file", upArgs);
 
             if (uploadResult == null) return null;
 
@@ -87,8 +109,9 @@ namespace ShareX.UploadersLib.FileUploaders
             pushArgs.Add("type", "file");
             pushArgs.Add("file_url", fileInfo.file_url);
             pushArgs.Add("body", "Sent via ShareX");
+            pushArgs.Add("file_type", fileInfo.file_type);
 
-            string pushResult = SendRequest(HttpMethod.POST, apiSendPushURL, pushArgs, headers);
+            string pushResult = SendRequestMultiPart(apiSendPushURL, pushArgs, headers);
 
             if (pushResult == null) return null;
 
@@ -102,7 +125,7 @@ namespace ShareX.UploadersLib.FileUploaders
 
         private string Push(string pushType, string valueType, string value, string title)
         {
-            NameValueCollection headers = CreateAuthenticationHeader(Config.UserAPIKey, "");
+            NameValueCollection headers = RequestHelpers.CreateAuthenticationHeader(Config.UserAPIKey, "");
 
             Dictionary<string, string> args = new Dictionary<string, string>();
             args.Add("device_iden", Config.CurrentDevice.Key);
@@ -118,7 +141,7 @@ namespace ShareX.UploadersLib.FileUploaders
                     args.Add("body", "Sent via ShareX");
             }
 
-            string response = SendRequest(HttpMethod.POST, apiSendPushURL, args, headers);
+            string response = SendRequestMultiPart(apiSendPushURL, args, headers);
 
             if (response == null) return null;
 
@@ -151,14 +174,16 @@ namespace ShareX.UploadersLib.FileUploaders
 
         public List<PushbulletDevice> GetDeviceList()
         {
-            NameValueCollection headers = CreateAuthenticationHeader(Config.UserAPIKey, "");
+            NameValueCollection headers = RequestHelpers.CreateAuthenticationHeader(Config.UserAPIKey, "");
 
             string response = SendRequest(HttpMethod.GET, apiGetDevicesURL, headers: headers);
 
             PushbulletResponseDevices devicesResponse = JsonConvert.DeserializeObject<PushbulletResponseDevices>(response);
 
             if (devicesResponse != null && devicesResponse.devices != null)
-                return devicesResponse.devices.Select(x => new PushbulletDevice { Key = x.iden, Name = x.nickname }).ToList();
+            {
+                return devicesResponse.devices.Where(x => !string.IsNullOrEmpty(x.nickname)).Select(x1 => new PushbulletDevice { Key = x1.iden, Name = x1.nickname }).ToList();
+            }
 
             return new List<PushbulletDevice>();
         }
@@ -218,16 +243,19 @@ namespace ShareX.UploadersLib.FileUploaders
 
     public class PushbulletSettings
     {
-        public string UserAPIKey = string.Empty;
-        public List<PushbulletDevice> DeviceList = new List<PushbulletDevice>();
-        public int SelectedDevice = 0;
+        [JsonEncrypt]
+        public string UserAPIKey { get; set; } = "";
+        public List<PushbulletDevice> DeviceList { get; set; } = new List<PushbulletDevice>();
+        public int SelectedDevice { get; set; } = 0;
 
         public PushbulletDevice CurrentDevice
         {
             get
             {
                 if (DeviceList.IsValidIndex(SelectedDevice))
+                {
                     return DeviceList[SelectedDevice];
+                }
 
                 return null;
             }

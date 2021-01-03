@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -35,6 +35,7 @@ namespace ShareX.HelpersLib
         public MonitorTestForm()
         {
             InitializeComponent();
+            ShareXResources.ApplyTheme(this);
 
             Rectangle screenBounds = CaptureHelpers.GetScreenBounds();
             Location = screenBounds.Location;
@@ -43,12 +44,12 @@ namespace ShareX.HelpersLib
             rbBlackWhite.Checked = true;
             tbBlackWhite.Value = 128;
             tbRed.Value = 255;
-            cbGradient.Items.AddRange(Enum.GetNames(typeof(LinearGradientMode)));
+            cbGradient.Items.AddRange(Helpers.GetLocalizedEnumDescriptions<LinearGradientMode>());
             cbGradient.SelectedIndex = 1;
             btnGradientColor1.Color = Color.DarkGray;
             btnGradientColor2.Color = Color.Black;
             cbShapes.SelectedIndex = 0;
-            tbShapeSize.Value = 3;
+            tbShapeSize.Value = 5;
         }
 
         private void SetBackColor()
@@ -172,13 +173,13 @@ namespace ShareX.HelpersLib
                 switch (cbShapes.SelectedIndex)
                 {
                     case 0:
-                        BackgroundImage = DrawChecker(shapeSize, Color.Black);
-                        break;
-                    case 1:
                         BackgroundImage = DrawHorizontalLine(shapeSize, Color.Black);
                         break;
-                    case 2:
+                    case 1:
                         BackgroundImage = DrawVerticalLine(shapeSize, Color.Black);
+                        break;
+                    case 2:
+                        BackgroundImage = DrawChecker(shapeSize, Color.Black);
                         break;
                 }
             }
@@ -224,16 +225,14 @@ namespace ShareX.HelpersLib
 
         private void btnColorDialog_Click(object sender, EventArgs e)
         {
-            using (ColorPickerForm dialogColor = new ColorPickerForm(Color.FromArgb(tbRed.Value, tbGreen.Value, tbBlue.Value)))
+            Color currentColor = Color.FromArgb(tbRed.Value, tbGreen.Value, tbBlue.Value);
+
+            if (ColorPickerForm.PickColor(currentColor, out Color newColor, this))
             {
-                if (dialogColor.ShowDialog() == DialogResult.OK)
-                {
-                    Color color = dialogColor.NewColor;
-                    tbRed.Value = color.R;
-                    tbGreen.Value = color.G;
-                    tbBlue.Value = color.B;
-                    DrawRedGreenBlue();
-                }
+                tbRed.Value = newColor.R;
+                tbGreen.Value = newColor.G;
+                tbBlue.Value = newColor.B;
+                DrawRedGreenBlue();
             }
         }
 
@@ -279,6 +278,14 @@ namespace ShareX.HelpersLib
         {
             lblShapeSizeValue.Text = tbShapeSize.Value.ToString();
             DrawSelectedShape();
+        }
+
+        private void btnScreenTearingTest_Click(object sender, EventArgs e)
+        {
+            using (ScreenTearingTestForm screenTearingTestForm = new ScreenTearingTestForm())
+            {
+                screenTearingTestForm.ShowDialog();
+            }
         }
 
         #endregion Form events

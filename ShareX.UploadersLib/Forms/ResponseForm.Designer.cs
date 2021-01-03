@@ -55,17 +55,17 @@
             // 
             // tpString
             // 
+            this.tpString.BackColor = System.Drawing.SystemColors.Window;
             this.tpString.Controls.Add(this.txtSource);
             resources.ApplyResources(this.tpString, "tpString");
             this.tpString.Name = "tpString";
-            this.tpString.UseVisualStyleBackColor = true;
             // 
             // tpWebBrowser
             // 
+            this.tpWebBrowser.BackColor = System.Drawing.SystemColors.Window;
             this.tpWebBrowser.Controls.Add(this.wbResponse);
             resources.ApplyResources(this.tpWebBrowser, "tpWebBrowser");
             this.tpWebBrowser.Name = "tpWebBrowser";
-            this.tpWebBrowser.UseVisualStyleBackColor = true;
             // 
             // wbResponse
             // 
@@ -76,7 +76,9 @@
             // ResponseForm
             // 
             resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.BackColor = System.Drawing.SystemColors.Window;
             this.Controls.Add(this.tcResponse);
             this.Name = "ResponseForm";
             this.Resize += new System.EventHandler(this.ResponseForm_Resize);

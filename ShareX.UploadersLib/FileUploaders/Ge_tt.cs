@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,13 +24,41 @@
 #endregion License Information (GPL v3)
 
 using Newtonsoft.Json;
+using ShareX.HelpersLib;
+using ShareX.UploadersLib.Properties;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
+using System.Windows.Forms;
 
 namespace ShareX.UploadersLib.FileUploaders
 {
+    public class Ge_ttFileUploaderService : FileUploaderService
+    {
+        public override FileDestination EnumValue { get; } = FileDestination.Ge_tt;
+
+        public override Icon ServiceIcon => Resources.Gett;
+
+        public override bool CheckConfig(UploadersConfig config)
+        {
+            return config.Ge_ttLogin != null && !string.IsNullOrEmpty(config.Ge_ttLogin.AccessToken);
+        }
+
+        public override GenericUploader CreateUploader(UploadersConfig config, TaskReferenceHelper taskInfo)
+        {
+            return new Ge_tt(APIKeys.Ge_ttKey)
+            {
+                AccessToken = config.Ge_ttLogin.AccessToken
+            };
+        }
+
+        public override TabPage GetUploadersConfigTabPage(UploadersConfigForm form) => form.tpGe_tt;
+    }
+
     public sealed class Ge_tt : FileUploader
     {
+        private const string APIURL = "http://api.ge.tt/1";
+
         public string APIKey { get; private set; }
         public string AccessToken { get; set; }
 
@@ -46,9 +74,10 @@ namespace ShareX.UploadersLib.FileUploaders
             args.Add("email", email);
             args.Add("password", password);
 
-            string argsJSON = JsonConvert.SerializeObject(args);
+            string json = JsonConvert.SerializeObject(args);
 
-            string response = SendRequestJSON("https://open.ge.tt/1/users/login", argsJSON);
+            string url = URLHelpers.CombineURL(APIURL, "users/login");
+            string response = SendRequest(HttpMethod.POST, url, json, RequestHelpers.ContentTypeJSON);
 
             return JsonConvert.DeserializeObject<Ge_ttLogin>(response);
         }
@@ -58,7 +87,7 @@ namespace ShareX.UploadersLib.FileUploaders
             Dictionary<string, string> args = new Dictionary<string, string>();
             args.Add("accesstoken", accessToken);
 
-            string url = CreateQuery("https://open.ge.tt/1/shares/create", args);
+            string url = URLHelpers.CreateQueryString(URLHelpers.CombineURL(APIURL, "shares/create"), args);
             string response = SendRequest(HttpMethod.POST, url);
 
             return JsonConvert.DeserializeObject<Ge_ttShare>(response);
@@ -69,14 +98,12 @@ namespace ShareX.UploadersLib.FileUploaders
             Dictionary<string, string> args = new Dictionary<string, string>();
             args.Add("accesstoken", accessToken);
 
-            string url = CreateQuery(string.Format("https://open.ge.tt/1/files/{0}/create", shareName), args);
-
             Dictionary<string, string> args2 = new Dictionary<string, string>();
             args2.Add("filename", fileName);
 
-            string argsJSON = JsonConvert.SerializeObject(args2);
+            string json = JsonConvert.SerializeObject(args2);
 
-            string response = SendRequestJSON(url, argsJSON);
+            string response = SendRequest(HttpMethod.POST, URLHelpers.CombineURL(APIURL, "files", shareName, "create"), json, RequestHelpers.ContentTypeJSON, args);
 
             return JsonConvert.DeserializeObject<Ge_ttFile>(response);
         }
@@ -93,7 +120,7 @@ namespace ShareX.UploadersLib.FileUploaders
 
                 if (file != null)
                 {
-                    result = UploadData(stream, file.Upload.PostURL, fileName);
+                    result = SendRequestFile(file.Upload.PostURL, stream, fileName, "file");
 
                     if (result.IsSuccess)
                     {
@@ -109,7 +136,9 @@ namespace ShareX.UploadersLib.FileUploaders
     public class Ge_ttLogin
     {
         public string Expires { get; set; }
+        [JsonEncrypt]
         public string AccessToken { get; set; }
+        [JsonEncrypt]
         public string RefreshToken { get; set; }
     }
 

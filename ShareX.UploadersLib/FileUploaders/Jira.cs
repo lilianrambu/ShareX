@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -23,15 +23,14 @@
 
 #endregion License Information (GPL v3)
 
-// gpailler
+// Credits: https://github.com/gpailler
 
 using Newtonsoft.Json;
-using ShareX.HelpersLib;
-using ShareX.UploadersLib.GUI;
-using ShareX.UploadersLib.HelperClasses;
+using ShareX.UploadersLib.Properties;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -41,6 +40,25 @@ using System.Windows.Forms;
 
 namespace ShareX.UploadersLib.FileUploaders
 {
+    public class JiraFileUploaderService : FileUploaderService
+    {
+        public override FileDestination EnumValue { get; } = FileDestination.Jira;
+
+        public override Image ServiceImage => Resources.jira;
+
+        public override bool CheckConfig(UploadersConfig config)
+        {
+            return OAuthInfo.CheckOAuth(config.JiraOAuthInfo);
+        }
+
+        public override GenericUploader CreateUploader(UploadersConfig config, TaskReferenceHelper taskInfo)
+        {
+            return new Jira(config.JiraHost, config.JiraOAuthInfo, config.JiraIssuePrefix);
+        }
+
+        public override TabPage GetUploadersConfigTabPage(UploadersConfigForm form) => form.tpJira;
+    }
+
     public class Jira : FileUploader, IOAuth
     {
         private const string PathRequestToken = "/plugins/servlet/oauth/request-token";
@@ -51,15 +69,17 @@ namespace ShareX.UploadersLib.FileUploaders
         private const string PathBrowseIssue = "/browse/{0}";
         private const string PathIssueAttachments = PathApi + "/issue/{0}/attachments";
 
-        private static readonly X509Certificate2 _jiraCertificate;
+        private static readonly X509Certificate2 jiraCertificate;
 
-        private readonly string _jiraBaseAddress;
-        private readonly string _jiraIssuePrefix;
+        public OAuthInfo AuthInfo { get; set; }
 
-        private Uri _jiraRequestToken;
-        private Uri _jiraAuthorize;
-        private Uri _jiraAccessToken;
-        private Uri _jiraPathSearch;
+        private readonly string jiraBaseAddress;
+        private readonly string jiraIssuePrefix;
+
+        private Uri jiraRequestToken;
+        private Uri jiraAuthorize;
+        private Uri jiraAccessToken;
+        private Uri jiraPathSearch;
 
         #region Keypair
 
@@ -73,7 +93,7 @@ namespace ShareX.UploadersLib.FileUploaders
             {
                 byte[] pfx = new byte[stream.Length];
                 stream.Read(pfx, 0, pfx.Length);
-                _jiraCertificate = new X509Certificate2(pfx, string.Empty, X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.Exportable);
+                jiraCertificate = new X509Certificate2(pfx, "", X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.Exportable);
             }
         }
 
@@ -81,7 +101,7 @@ namespace ShareX.UploadersLib.FileUploaders
         {
             get
             {
-                return _jiraCertificate.PrivateKey.ToXmlString(true);
+                return jiraCertificate.PrivateKey.ToXmlString(true);
             }
         }
 
@@ -91,7 +111,7 @@ namespace ShareX.UploadersLib.FileUploaders
             {
                 const int LineBreakIdx = 50;
 
-                string publicKey = Convert.ToBase64String(ExportPublicKey(_jiraCertificate.PublicKey));
+                string publicKey = Convert.ToBase64String(ExportPublicKey(jiraCertificate.PublicKey));
                 int idx = 0;
                 StringBuilder sb = new StringBuilder();
                 foreach (char c in publicKey)
@@ -153,14 +173,12 @@ namespace ShareX.UploadersLib.FileUploaders
 
         public Jira(string jiraBaseAddress, OAuthInfo oauth, string jiraIssuePrefix = null)
         {
-            _jiraBaseAddress = jiraBaseAddress;
+            this.jiraBaseAddress = jiraBaseAddress;
             AuthInfo = oauth;
-            _jiraIssuePrefix = jiraIssuePrefix;
+            this.jiraIssuePrefix = jiraIssuePrefix;
 
             InitUris();
         }
-
-        public OAuthInfo AuthInfo { get; set; }
 
         public string GetAuthorizationURL()
         {
@@ -169,13 +187,13 @@ namespace ShareX.UploadersLib.FileUploaders
                 Dictionary<string, string> args = new Dictionary<string, string>();
                 args[OAuthManager.ParameterCallback] = "oob"; // Request activation code to validate authentication
 
-                string url = OAuthManager.GenerateQuery(_jiraRequestToken.ToString(), args, HttpMethod.POST, AuthInfo);
+                string url = OAuthManager.GenerateQuery(jiraRequestToken.ToString(), args, HttpMethod.POST, AuthInfo);
 
                 string response = SendRequest(HttpMethod.POST, url);
 
                 if (!string.IsNullOrEmpty(response))
                 {
-                    return OAuthManager.GetAuthorizationURL(response, AuthInfo, _jiraAuthorize.ToString());
+                    return OAuthManager.GetAuthorizationURL(response, AuthInfo, jiraAuthorize.ToString());
                 }
 
                 return null;
@@ -188,7 +206,7 @@ namespace ShareX.UploadersLib.FileUploaders
             {
                 AuthInfo.AuthVerifier = verificationCode;
 
-                NameValueCollection nv = GetAccessTokenEx(_jiraAccessToken.ToString(), AuthInfo, HttpMethod.POST);
+                NameValueCollection nv = GetAccessTokenEx(jiraAccessToken.ToString(), AuthInfo, HttpMethod.POST);
 
                 return nv != null;
             }
@@ -198,7 +216,7 @@ namespace ShareX.UploadersLib.FileUploaders
         {
             using (new SSLBypassHelper())
             {
-                using (JiraUpload up = new JiraUpload(_jiraIssuePrefix, GetSummary))
+                using (JiraUpload up = new JiraUpload(jiraIssuePrefix, GetSummary))
                 {
                     if (up.ShowDialog() == DialogResult.Cancel)
                     {
@@ -209,16 +227,16 @@ namespace ShareX.UploadersLib.FileUploaders
                         };
                     }
 
-                    Uri uri = this.Combine(_jiraBaseAddress, string.Format(PathIssueAttachments, up.IssueId));
+                    Uri uri = Combine(jiraBaseAddress, string.Format(PathIssueAttachments, up.IssueId));
                     string query = OAuthManager.GenerateQuery(uri.ToString(), null, HttpMethod.POST, AuthInfo);
 
                     NameValueCollection headers = new NameValueCollection();
                     headers.Set("X-Atlassian-Token", "nocheck");
 
-                    UploadResult res = UploadData(stream, query, fileName, headers: headers);
+                    UploadResult res = SendRequestFile(query, stream, fileName, "file", headers: headers);
                     if (res.Response.Contains("errorMessages"))
                     {
-                        res.Errors.Add(res.Response);
+                        Errors.Add(res.Response);
                     }
                     else
                     {
@@ -226,7 +244,7 @@ namespace ShareX.UploadersLib.FileUploaders
                         var anonType = new[] { new { thumbnail = "" } };
                         var anonObject = JsonConvert.DeserializeAnonymousType(res.Response, anonType);
                         res.ThumbnailURL = anonObject[0].thumbnail;
-                        res.URL = this.Combine(_jiraBaseAddress, string.Format(PathBrowseIssue, up.IssueId)).ToString();
+                        res.URL = Combine(jiraBaseAddress, string.Format(PathBrowseIssue, up.IssueId)).ToString();
                     }
 
                     return res;
@@ -242,7 +260,7 @@ namespace ShareX.UploadersLib.FileUploaders
                 args["jql"] = string.Format("issueKey='{0}'", issueId);
                 args["maxResults"] = "10";
                 args["fields"] = "summary";
-                string query = OAuthManager.GenerateQuery(_jiraPathSearch.ToString(), args, HttpMethod.GET, AuthInfo);
+                string query = OAuthManager.GenerateQuery(jiraPathSearch.ToString(), args, HttpMethod.GET, AuthInfo);
 
                 string response = SendRequest(HttpMethod.GET, query);
                 if (!string.IsNullOrEmpty(response))
@@ -261,10 +279,10 @@ namespace ShareX.UploadersLib.FileUploaders
 
         private void InitUris()
         {
-            _jiraRequestToken = this.Combine(_jiraBaseAddress, PathRequestToken);
-            _jiraAuthorize = this.Combine(_jiraBaseAddress, PathAuthorize);
-            _jiraAccessToken = this.Combine(_jiraBaseAddress, PathAccessToken);
-            _jiraPathSearch = this.Combine(_jiraBaseAddress, PathSearch);
+            jiraRequestToken = Combine(jiraBaseAddress, PathRequestToken);
+            jiraAuthorize = Combine(jiraBaseAddress, PathAuthorize);
+            jiraAccessToken = Combine(jiraBaseAddress, PathAccessToken);
+            jiraPathSearch = Combine(jiraBaseAddress, PathSearch);
         }
 
         private Uri Combine(string path1, string path2)

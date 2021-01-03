@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -33,7 +33,86 @@ namespace ShareX.HelpersLib
     [StructLayout(LayoutKind.Sequential)]
     public struct RECT
     {
-        public int Left, Top, Right, Bottom;
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+
+        public int X
+        {
+            get
+            {
+                return Left;
+            }
+            set
+            {
+                Right -= Left - value;
+                Left = value;
+            }
+        }
+
+        public int Y
+        {
+            get
+            {
+                return Top;
+            }
+            set
+            {
+                Bottom -= Top - value;
+                Top = value;
+            }
+        }
+
+        public int Width
+        {
+            get
+            {
+                return Right - Left;
+            }
+            set
+            {
+                Right = value + Left;
+            }
+        }
+
+        public int Height
+        {
+            get
+            {
+                return Bottom - Top;
+            }
+            set
+            {
+                Bottom = value + Top;
+            }
+        }
+
+        public Point Location
+        {
+            get
+            {
+                return new Point(Left, Top);
+            }
+            set
+            {
+                X = value.X;
+                Y = value.Y;
+            }
+        }
+
+        public Size Size
+        {
+            get
+            {
+                return new Size(Width, Height);
+            }
+            set
+            {
+                Width = value.Width;
+                Height = value.Height;
+            }
+        }
 
         public RECT(int left, int top, int right, int bottom)
         {
@@ -43,45 +122,8 @@ namespace ShareX.HelpersLib
             Bottom = bottom;
         }
 
-        public RECT(Rectangle r)
-            : this(r.Left, r.Top, r.Right, r.Bottom)
+        public RECT(Rectangle r) : this(r.Left, r.Top, r.Right, r.Bottom)
         {
-        }
-
-        public int X
-        {
-            get { return Left; }
-            set { Right -= (Left - value); Left = value; }
-        }
-
-        public int Y
-        {
-            get { return Top; }
-            set { Bottom -= (Top - value); Top = value; }
-        }
-
-        public int Width
-        {
-            get { return Right - Left; }
-            set { Right = value + Left; }
-        }
-
-        public int Height
-        {
-            get { return Bottom - Top; }
-            set { Bottom = value + Top; }
-        }
-
-        public Point Location
-        {
-            get { return new Point(Left, Top); }
-            set { X = value.X; Y = value.Y; }
-        }
-
-        public Size Size
-        {
-            get { return new Size(Width, Height); }
-            set { Width = value.Width; Height = value.Height; }
         }
 
         public static implicit operator Rectangle(RECT r)
@@ -200,10 +242,9 @@ namespace ShareX.HelpersLib
         public ushort atomWindowType;
         public ushort wCreatorVersion;
 
-        public WINDOWINFO(Boolean? filler)
-            : this() // Allows automatic initialization of "cbSize" with "new WINDOWINFO(null/true/false)".
+        public WINDOWINFO(bool? filler) : this() // Allows automatic initialization of "cbSize" with "new WINDOWINFO(null/true/false)".
         {
-            cbSize = (UInt32)(Marshal.SizeOf(typeof(WINDOWINFO)));
+            cbSize = (uint)Marshal.SizeOf(typeof(WINDOWINFO));
         }
     }
 
@@ -275,20 +316,57 @@ namespace ShareX.HelpersLib
     [StructLayout(LayoutKind.Sequential)]
     public struct CursorInfo
     {
-        public Int32 cbSize; // Specifies the size, in bytes, of the structure.
-        public Int32 flags; // Specifies the cursor state. This parameter can be one of the following values:
-        public IntPtr hCursor; // Handle to the cursor.
-        public Point ptScreenPos; // A POINT structure that receives the screen coordinates of the cursor.
+        /// <summary>
+        /// The size of the structure, in bytes. The caller must set this to sizeof(CURSORINFO).
+        /// </summary>
+        public int cbSize;
+
+        /// <summary>
+        /// The cursor state. This parameter can be one of the following values:
+        /// 0 (The cursor is hidden.)
+        /// CURSOR_SHOWING 0x00000001 (The cursor is showing.)
+        /// CURSOR_SUPPRESSED 0x00000002 (Windows 8: The cursor is suppressed.This flag indicates that the system is not drawing the cursor because the user is providing input through touch or pen instead of the mouse.)
+        /// </summary>
+        public int flags;
+
+        /// <summary>
+        /// A handle to the cursor.
+        /// </summary>
+        public IntPtr hCursor;
+
+        /// <summary>
+        /// A structure that receives the screen coordinates of the cursor.
+        /// </summary>
+        public Point ptScreenPos;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct IconInfo
     {
-        public bool fIcon; // Specifies whether this structure defines an icon or a cursor. A value of TRUE specifies
-        public Int32 xHotspot; // Specifies the x-coordinate of a cursor's hot spot. If this structure defines an icon, the hot
-        public Int32 yHotspot; // Specifies the y-coordinate of the cursor's hot spot. If this structure defines an icon, the hot
-        public IntPtr hbmMask; // (HBITMAP) Specifies the icon bitmask bitmap. If this structure defines a black and white icon,
-        public IntPtr hbmColor; // (HBITMAP) Handle to the icon color bitmap. This member can be optional if this
+        /// <summary>
+        /// Specifies whether this structure defines an icon or a cursor. A value of TRUE specifies an icon; FALSE specifies a cursor.
+        /// </summary>
+        public bool fIcon;
+
+        /// <summary>
+        /// The x-coordinate of a cursor's hot spot. If this structure defines an icon, the hot spot is always in the center of the icon, and this member is ignored.
+        /// </summary>
+        public int xHotspot;
+
+        /// <summary>
+        /// The y-coordinate of the cursor's hot spot. If this structure defines an icon, the hot spot is always in the center of the icon, and this member is ignored.
+        /// </summary>
+        public int yHotspot;
+
+        /// <summary>
+        /// The icon bitmask bitmap. If this structure defines a black and white icon, this bitmask is formatted so that the upper half is the icon AND bitmask and the lower half is the icon XOR bitmask. Under this condition, the height should be an even multiple of two. If this structure defines a color icon, this mask only defines the AND bitmask of the icon.
+        /// </summary>
+        public IntPtr hbmMask;
+
+        /// <summary>
+        /// A handle to the icon color bitmap. This member can be optional if this structure defines a black and white icon. The AND bitmask of hbmMask is applied with the SRCAND flag to the destination; subsequently, the color bitmap is applied (using XOR) to the destination by using the SRCINVERT flag.
+        /// </summary>
+        public IntPtr hbmColor;
     }
 
     /// <summary>
@@ -513,35 +591,137 @@ namespace ShareX.HelpersLib
         public int interleaveEvery;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 2)]
+    public struct BITMAPFILEHEADER
+    {
+        public static readonly short BM = 0x4d42;
+        public short bfType;
+        public int bfSize;
+        public short bfReserved1;
+        public short bfReserved2;
+        public int bfOffBits;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
     public struct BITMAPINFOHEADER
     {
+        [FieldOffset(0)]
         public uint biSize;
+        [FieldOffset(4)]
         public int biWidth;
+        [FieldOffset(8)]
         public int biHeight;
+        [FieldOffset(12)]
         public ushort biPlanes;
+        [FieldOffset(14)]
         public ushort biBitCount;
-        public BitmapCompressionMode biCompression;
+        [FieldOffset(16)]
+        public BI_COMPRESSION biCompression;
+        [FieldOffset(20)]
         public uint biSizeImage;
+        [FieldOffset(24)]
         public int biXPelsPerMeter;
+        [FieldOffset(28)]
         public int biYPelsPerMeter;
+        [FieldOffset(32)]
         public uint biClrUsed;
+        [FieldOffset(36)]
         public uint biClrImportant;
+        [FieldOffset(40)]
+        public uint bV5RedMask;
+        [FieldOffset(44)]
+        public uint bV5GreenMask;
+        [FieldOffset(48)]
+        public uint bV5BlueMask;
+        [FieldOffset(52)]
+        public uint bV5AlphaMask;
+        [FieldOffset(56)]
+        public uint bV5CSType;
+        [FieldOffset(60)]
+        public CIEXYZTRIPLE bV5Endpoints;
+        [FieldOffset(96)]
+        public uint bV5GammaRed;
+        [FieldOffset(100)]
+        public uint bV5GammaGreen;
+        [FieldOffset(104)]
+        public uint bV5GammaBlue;
+        [FieldOffset(108)]
+        public uint bV5Intent;
+        [FieldOffset(112)]
+        public uint bV5ProfileData;
+        [FieldOffset(116)]
+        public uint bV5ProfileSize;
+        [FieldOffset(120)]
+        public uint bV5Reserved;
 
-        public BITMAPINFOHEADER(int width, int height, ushort bitCount)
+        public const int DIB_RGB_COLORS = 0;
+
+        public BITMAPINFOHEADER(int width, int height, ushort bpp)
         {
             biSize = (uint)Marshal.SizeOf(typeof(BITMAPINFOHEADER));
+            biPlanes = 1;
+            biCompression = BI_COMPRESSION.BI_RGB;
             biWidth = width;
             biHeight = height;
-            biPlanes = 1;
-            biBitCount = bitCount;
-            biCompression = BitmapCompressionMode.BI_RGB;
-            biSizeImage = 0;
+            biBitCount = bpp;
+            biSizeImage = (uint)(width * height * (bpp >> 3));
             biXPelsPerMeter = 0;
             biYPelsPerMeter = 0;
             biClrUsed = 0;
             biClrImportant = 0;
+            bV5RedMask = (uint)255 << 16;
+            bV5GreenMask = (uint)255 << 8;
+            bV5BlueMask = (uint)255;
+            bV5AlphaMask = (uint)255 << 24;
+            bV5CSType = 1934772034;
+            bV5Endpoints = new CIEXYZTRIPLE();
+            bV5Endpoints.ciexyzBlue = new CIEXYZ(0);
+            bV5Endpoints.ciexyzGreen = new CIEXYZ(0);
+            bV5Endpoints.ciexyzRed = new CIEXYZ(0);
+            bV5GammaRed = 0;
+            bV5GammaGreen = 0;
+            bV5GammaBlue = 0;
+            bV5Intent = 4;
+            bV5ProfileData = 0;
+            bV5ProfileSize = 0;
+            bV5Reserved = 0;
         }
+
+        public uint OffsetToPixels
+        {
+            get
+            {
+                if (biCompression == BI_COMPRESSION.BI_BITFIELDS)
+                {
+                    return biSize + (3 * 4);
+                }
+
+                return biSize;
+            }
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CIEXYZ
+    {
+        public uint ciexyzX;
+        public uint ciexyzY;
+        public uint ciexyzZ;
+
+        public CIEXYZ(uint FXPT2DOT30)
+        {
+            ciexyzX = FXPT2DOT30;
+            ciexyzY = FXPT2DOT30;
+            ciexyzZ = FXPT2DOT30;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CIEXYZTRIPLE
+    {
+        public CIEXYZ ciexyzRed;
+        public CIEXYZ ciexyzGreen;
+        public CIEXYZ ciexyzBlue;
     }
 
     public struct INPUT
@@ -590,5 +770,242 @@ namespace ShareX.HelpersLib
         public int uMsg;
         public short wParamL;
         public short wParamH;
+    }
+
+    [ComImport]
+    [Guid("0000010D-0000-0000-C000-000000000046")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    public interface IViewObject
+    {
+        void Draw([MarshalAs(UnmanagedType.U4)] uint dwAspect, int lindex, IntPtr pvAspect, [In] IntPtr ptd, IntPtr hdcTargetDev, IntPtr hdcDraw, [MarshalAs(UnmanagedType.Struct)] ref RECT lprcBounds, [In] IntPtr lprcWBounds, IntPtr pfnContinue, [MarshalAs(UnmanagedType.U4)] uint dwContinue);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FLASHWINFO
+    {
+        public uint cbSize;
+        public IntPtr hwnd;
+        public uint dwFlags;
+        public uint uCount;
+        public uint dwTimeout;
+    }
+
+    [Serializable, StructLayout(LayoutKind.Sequential)]
+    public struct SCROLLINFO
+    {
+        public uint cbSize;
+        public uint fMask;
+        public int nMin;
+        public int nMax;
+        public uint nPage;
+        public int nPos;
+        public int nTrackPos;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SECURITY_ATTRIBUTES
+    {
+        public int nLength;
+        public IntPtr lpSecurityDescriptor;
+        public int bInheritHandle;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    public struct STARTUPINFO
+    {
+        public int cb;
+        public string lpReserved;
+        public string lpDesktop;
+        public string lpTitle;
+        public int dwX;
+        public int dwY;
+        public int dwXSize;
+        public int dwYSize;
+        public int dwXCountChars;
+        public int dwYCountChars;
+        public int dwFillAttribute;
+        public int dwFlags;
+        public short wShowWindow;
+        public short cbReserved2;
+        public IntPtr lpReserved2;
+        public IntPtr hStdInput;
+        public IntPtr hStdOutput;
+        public IntPtr hStdError;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PROCESS_INFORMATION
+    {
+        public IntPtr hProcess;
+        public IntPtr hThread;
+        public int dwProcessId;
+        public int dwThreadId;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SHFILEINFO
+    {
+        public const int NAMESIZE = 80;
+        public IntPtr hIcon;
+        public int iIcon;
+        public uint dwAttributes;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+        public string szDisplayName;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
+        public string szTypeName;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct IMAGELISTDRAWPARAMS
+    {
+        public int cbSize;
+        public IntPtr himl;
+        public int i;
+        public IntPtr hdcDst;
+        public int x;
+        public int y;
+        public int cx;
+        public int cy;
+        public int xBitmap; // x offest from the upperleft of bitmap
+        public int yBitmap; // y offset from the upperleft of bitmap
+        public int rgbBk;
+        public int rgbFg;
+        public int fStyle;
+        public int dwRop;
+        public int fState;
+        public int Frame;
+        public int crEffect;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct IMAGEINFO
+    {
+        public IntPtr hbmImage;
+        public IntPtr hbmMask;
+        public int Unused1;
+        public int Unused2;
+        public RECT rcImage;
+    }
+
+    [ComImportAttribute()]
+    [GuidAttribute("46EB5926-582E-4017-9FDF-E8998DAA0950")]
+    [InterfaceTypeAttribute(ComInterfaceType.InterfaceIsIUnknown)]
+    public interface IImageList
+    {
+        [PreserveSig]
+        int Add(IntPtr hbmImage, IntPtr hbmMask, ref int pi);
+
+        [PreserveSig]
+        int ReplaceIcon(int i, IntPtr hicon, ref int pi);
+
+        [PreserveSig]
+        int SetOverlayImage(int iImage, int iOverlay);
+
+        [PreserveSig]
+        int Replace(int i, IntPtr hbmImage, IntPtr hbmMask);
+
+        [PreserveSig]
+        int AddMasked(IntPtr hbmImage, int crMask, ref int pi);
+
+        [PreserveSig]
+        int Draw(ref IMAGELISTDRAWPARAMS pimldp);
+
+        [PreserveSig]
+        int Remove(int i);
+
+        [PreserveSig]
+        int GetIcon(int i, int flags, ref IntPtr picon);
+
+        [PreserveSig]
+        int GetImageInfo(int i, ref IMAGEINFO pImageInfo);
+
+        [PreserveSig]
+        int Copy(int iDst, IImageList punkSrc, int iSrc, int uFlags);
+
+        [PreserveSig]
+        int Merge(int i1, IImageList punk2, int i2, int dx, int dy, ref Guid riid, ref IntPtr ppv);
+
+        [PreserveSig]
+        int Clone(ref Guid riid, ref IntPtr ppv);
+
+        [PreserveSig]
+        int GetImageRect(int i, ref RECT prc);
+
+        [PreserveSig]
+        int GetIconSize(ref int cx, ref int cy);
+
+        [PreserveSig]
+        int SetIconSize(int cx, int cy);
+
+        [PreserveSig]
+        int GetImageCount(ref int pi);
+
+        [PreserveSig]
+        int SetImageCount(int uNewCount);
+
+        [PreserveSig]
+        int SetBkColor(int clrBk, ref int pclr);
+
+        [PreserveSig]
+        int GetBkColor(ref int pclr);
+
+        [PreserveSig]
+        int BeginDrag(int iTrack, int dxHotspot, int dyHotspot);
+
+        [PreserveSig]
+        int EndDrag();
+
+        [PreserveSig]
+        int DragEnter(IntPtr hwndLock, int x, int y);
+
+        [PreserveSig]
+        int DragLeave(IntPtr hwndLock);
+
+        [PreserveSig]
+        int DragMove(int x, int y);
+
+        [PreserveSig]
+        int SetDragCursorImage(ref IImageList punk, int iDrag, int dxHotspot, int dyHotspot);
+
+        [PreserveSig]
+        int DragShowNolock(int fShow);
+
+        [PreserveSig]
+        int GetDragImage(ref POINT ppt, ref POINT pptHotspot, ref Guid riid, ref IntPtr ppv);
+
+        [PreserveSig]
+        int GetItemFlags(int i, ref int dwFlags);
+
+        [PreserveSig]
+        int GetOverlayImage(int iOverlay, ref int piIndex);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BITMAPV5HEADER
+    {
+        public uint bV5Size;
+        public int bV5Width;
+        public int bV5Height;
+        public ushort bV5Planes;
+        public ushort bV5BitCount;
+        public uint bV5Compression;
+        public uint bV5SizeImage;
+        public int bV5XPelsPerMeter;
+        public int bV5YPelsPerMeter;
+        public ushort bV5ClrUsed;
+        public ushort bV5ClrImportant;
+        public ushort bV5RedMask;
+        public ushort bV5GreenMask;
+        public ushort bV5BlueMask;
+        public ushort bV5AlphaMask;
+        public ushort bV5CSType;
+        public IntPtr bV5Endpoints;
+        public ushort bV5GammaRed;
+        public ushort bV5GammaGreen;
+        public ushort bV5GammaBlue;
+        public ushort bV5Intent;
+        public ushort bV5ProfileData;
+        public ushort bV5ProfileSize;
+        public ushort bV5Reserved;
     }
 }

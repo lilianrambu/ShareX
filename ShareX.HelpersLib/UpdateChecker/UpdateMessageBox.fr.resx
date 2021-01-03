@@ -1,3 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -117,9 +118,15 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="btnNo.Text" xml:space="preserve">
-    <value>No</value>
+    <value>Non</value>
   </data>
   <data name="btnYes.Text" xml:space="preserve">
     <value>Oui</value>
+  </data>
+  <data name="cbDontShow.Text" xml:space="preserve">
+    <value>Ne pas redemander jusqu'au prochain démarrage de ShareX</value>
+  </data>
+  <data name="lblViewChangelog.Text" xml:space="preserve">
+    <value>Voir l'historique des modifications</value>
   </data>
 </root>

@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -23,6 +23,7 @@
 
 #endregion License Information (GPL v3)
 
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
@@ -31,6 +32,9 @@ namespace ShareX.HelpersLib
 {
     public partial class TabToTreeView : UserControl
     {
+        public delegate void TabChangedEventHandler(TabPage tabPage);
+        public event TabChangedEventHandler TabChanged;
+
         private TabControl mainTabControl;
 
         [Browsable(false)]
@@ -42,9 +46,12 @@ namespace ShareX.HelpersLib
             }
             set
             {
-                mainTabControl = value;
-                FillTreeView(tvMain.Nodes, mainTabControl);
-                tvMain.ExpandAll();
+                if (mainTabControl != value)
+                {
+                    mainTabControl = value;
+                    FillTreeView(tvMain.Nodes, mainTabControl);
+                    tvMain.ExpandAll();
+                }
             }
         }
 
@@ -86,6 +93,34 @@ namespace ShareX.HelpersLib
                 tvMain.ImageList = value;
             }
         }
+
+        public Color LeftPanelBackColor
+        {
+            get
+            {
+                return scMain.Panel1.BackColor;
+            }
+            set
+            {
+                pLeft.BackColor = value;
+                tvMain.BackColor = value;
+            }
+        }
+
+        public Color SeparatorColor
+        {
+            get
+            {
+                return pSeparator.BackColor;
+            }
+            set
+            {
+                pSeparator.BackColor = value;
+            }
+        }
+
+        [DefaultValue(false)]
+        public bool AutoSelectChild { get; set; }
 
         public TabToTreeView()
         {
@@ -136,13 +171,69 @@ namespace ShareX.HelpersLib
 
             if (tabPage != null)
             {
-                tvMain.BeginUpdate();
+                if (AutoSelectChild && tabPage.Controls.Count == 1 && tabPage.Controls[0] is TabControl)
+                {
+                    SelectChildNode();
+                }
+                else
+                {
+                    SelectTabPage(tabPage);
+                }
+            }
+        }
+
+        private void SelectTabPage(TabPage tabPage)
+        {
+            if (tabPage != null)
+            {
                 tcMain.Visible = true;
                 tcMain.TabPages.Clear();
                 tcMain.TabPages.Add(tabPage);
                 tvMain.Focus();
-                tvMain.EndUpdate();
+
+                OnTabChanged(tabPage);
             }
+        }
+
+        public void NavigateToTabPage(TabPage tabPage)
+        {
+            if (tabPage != null)
+            {
+                foreach (TreeNode node in tvMain.Nodes.All())
+                {
+                    TabPage nodeTabPage = node.Tag as TabPage;
+
+                    if (nodeTabPage == tabPage)
+                    {
+                        tvMain.SelectedNode = node;
+                        return;
+                    }
+                }
+            }
+        }
+
+        public void SelectChildNode()
+        {
+            TreeNode node = tvMain.SelectedNode;
+
+            if (node != null && node.Nodes.Count > 0)
+            {
+                tvMain.SelectedNode = node.Nodes[0];
+            }
+        }
+
+        protected void OnTabChanged(TabPage tabPage)
+        {
+            if (TabChanged != null)
+            {
+                TabChanged(tabPage);
+            }
+        }
+
+        protected override void ScaleControl(SizeF factor, BoundsSpecified specified)
+        {
+            base.ScaleControl(factor, specified);
+            scMain.SplitterDistance = (int)Math.Round(scMain.SplitterDistance * factor.Width);
         }
     }
 }

@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -27,7 +27,6 @@
 
 using Newtonsoft.Json;
 using ShareX.HelpersLib;
-using ShareX.UploadersLib.HelperClasses;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
@@ -61,8 +60,7 @@ namespace ShareX.UploadersLib.FileUploaders
             AuthInfo = oauth;
         }
 
-        public Copy(OAuthInfo oauth, CopyAccountInfo accountInfo)
-            : this(oauth)
+        public Copy(OAuthInfo oauth, CopyAccountInfo accountInfo) : this(oauth)
         {
             AccountInfo = accountInfo;
         }
@@ -120,9 +118,9 @@ namespace ShareX.UploadersLib.FileUploaders
         {
             if (!string.IsNullOrEmpty(path) && OAuthInfo.CheckOAuth(AuthInfo))
             {
-                string url = URLHelpers.CombineURL(URLFiles, URLHelpers.URLPathEncode(path));
+                string url = URLHelpers.CombineURL(URLFiles, URLHelpers.URLEncode(path, true));
                 string query = OAuthManager.GenerateQuery(url, null, HttpMethod.GET, AuthInfo);
-                return SendRequest(HttpMethod.GET, downloadStream, query);
+                return SendRequestDownload(HttpMethod.GET, query, downloadStream);
             }
 
             return false;
@@ -138,7 +136,7 @@ namespace ShareX.UploadersLib.FileUploaders
                 return null;
             }
 
-            string url = URLHelpers.CombineURL(URLFiles, URLHelpers.URLPathEncode(path));
+            string url = URLHelpers.CombineURL(URLFiles, URLHelpers.URLEncode(path, true));
 
             Dictionary<string, string> args = new Dictionary<string, string>();
             args.Add("overwrite", "true");
@@ -146,7 +144,7 @@ namespace ShareX.UploadersLib.FileUploaders
             string query = OAuthManager.GenerateQuery(url, args, HttpMethod.POST, AuthInfo);
 
             // There's a 1GB and 5 hour(max time for a single upload) limit to all uploads through the API.
-            UploadResult result = UploadData(stream, query, fileName, "file", headers: APIHeaders);
+            UploadResult result = SendRequestFile(query, stream, fileName, "file", headers: APIHeaders);
 
             if (result.IsSuccess)
             {
@@ -170,7 +168,7 @@ namespace ShareX.UploadersLib.FileUploaders
 
             if (OAuthInfo.CheckOAuth(AuthInfo))
             {
-                string url = URLHelpers.CombineURL(URLMetaData, URLHelpers.URLPathEncode(path));
+                string url = URLHelpers.CombineURL(URLMetaData, URLHelpers.URLEncode(path, true));
 
                 string query = OAuthManager.GenerateQuery(url, null, HttpMethod.GET, AuthInfo);
 
@@ -212,7 +210,7 @@ namespace ShareX.UploadersLib.FileUploaders
         {
             path = path.Trim('/');
 
-            string url = URLHelpers.CombineURL(URLLinks, URLHelpers.URLPathEncode(path));
+            string url = URLHelpers.CombineURL(URLLinks, URLHelpers.URLEncode(path, true));
 
             string query = OAuthManager.GenerateQuery(url, null, HttpMethod.POST, AuthInfo);
 
@@ -232,7 +230,7 @@ namespace ShareX.UploadersLib.FileUploaders
                 return GetLinkURL(link, path, urlType);
             }
 
-            return string.Empty;
+            return "";
         }
 
         public string GetPublicURL(string path, CopyURLType urlType = CopyURLType.Default)
@@ -248,7 +246,7 @@ namespace ShareX.UploadersLib.FileUploaders
                 }
             }
 
-            return string.Empty;
+            return "";
         }
 
         public static string TidyUploadPath(string uploadPath)
@@ -258,7 +256,7 @@ namespace ShareX.UploadersLib.FileUploaders
                 return uploadPath.Trim().Replace('\\', '/').Trim('/') + "/";
             }
 
-            return string.Empty;
+            return "";
         }
     }
 

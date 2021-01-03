@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -23,6 +23,7 @@
 
 #endregion License Information (GPL v3)
 
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
@@ -46,10 +47,26 @@ namespace ShareX.HelpersLib
             set
             {
                 color = value;
-                Refresh();
+
                 OnColorChanged(color);
+
+                Invalidate();
             }
         }
+
+        [DefaultValue(typeof(Color), "DarkGray")]
+        public Color BorderColor { get; set; } = Color.DarkGray;
+
+        [DefaultValue(3)]
+        public int Offset { get; set; } = 3;
+
+        [DefaultValue(false)]
+        public bool HoverEffect { get; set; } = false;
+
+        [DefaultValue(false)]
+        public bool ManualButtonClick { get; set; }
+
+        private bool isMouseHover;
 
         protected void OnColorChanged(Color color)
         {
@@ -63,44 +80,71 @@ namespace ShareX.HelpersLib
         {
             base.OnMouseClick(mevent);
 
-            ShowColorDialog();
+            if (!ManualButtonClick)
+            {
+                ShowColorDialog();
+            }
         }
 
         public void ShowColorDialog()
         {
-            using (ColorPickerForm dialogColor = new ColorPickerForm(Color))
+            if (ColorPickerForm.PickColor(Color, out Color newColor, FindForm()))
             {
-                if (dialogColor.ShowDialog() == DialogResult.OK)
-                {
-                    Color = dialogColor.NewColor;
-                }
+                Color = newColor;
             }
+        }
+
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            isMouseHover = true;
+
+            base.OnMouseEnter(e);
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            isMouseHover = false;
+
+            base.OnMouseLeave(e);
         }
 
         protected override void OnPaint(PaintEventArgs pevent)
         {
             base.OnPaint(pevent);
 
-            int offset = 3;
-            int boxSize = ClientRectangle.Height - offset * 2;
-            Rectangle boxRectangle = new Rectangle(ClientRectangle.Width - offset - boxSize, offset, boxSize, boxSize);
+            int boxSize = ClientRectangle.Height - (Offset * 2);
+            Rectangle boxRectangle = new Rectangle(ClientRectangle.Width - Offset - boxSize, Offset, boxSize, boxSize);
 
             Graphics g = pevent.Graphics;
 
-            if (Color.A < 255)
+            if (Color.IsTransparent())
             {
-                using (Image checker = ImageHelpers.CreateCheckers(boxSize, boxSize, Color.LightGray, Color.White))
+                using (Image checker = ImageHelpers.CreateCheckerPattern(boxSize, boxSize))
                 {
                     g.DrawImage(checker, boxRectangle);
                 }
             }
 
-            using (Brush brush = new SolidBrush(Color))
+            if (Color.A > 0)
             {
-                g.FillRectangle(brush, boxRectangle);
+                using (Brush brush = new SolidBrush(Color))
+                {
+                    g.FillRectangle(brush, boxRectangle);
+                }
             }
 
-            g.DrawRectangleProper(Pens.DarkGray, boxRectangle);
+            if (HoverEffect && isMouseHover)
+            {
+                using (Brush hoverBrush = new SolidBrush(Color.FromArgb(100, 255, 255, 255)))
+                {
+                    g.FillRectangle(hoverBrush, boxRectangle);
+                }
+            }
+
+            using (Pen borderPen = new Pen(BorderColor))
+            {
+                g.DrawRectangleProper(borderPen, boxRectangle);
+            }
         }
     }
 }

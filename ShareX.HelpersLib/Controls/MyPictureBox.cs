@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -71,6 +71,18 @@ namespace ShareX.HelpersLib
             }
         }
 
+        public Color PictureBoxBackColor
+        {
+            get
+            {
+                return pbMain.BackColor;
+            }
+            set
+            {
+                pbMain.BackColor = value;
+            }
+        }
+
         private bool drawCheckeredBackground;
 
         [DefaultValue(false)]
@@ -92,6 +104,9 @@ namespace ShareX.HelpersLib
 
         [DefaultValue(false)]
         public bool EnableRightClickMenu { get; set; }
+
+        [DefaultValue(false)]
+        public bool ShowImageSizeLabel { get; set; }
 
         public new event MouseEventHandler MouseDown
         {
@@ -139,7 +154,7 @@ namespace ShareX.HelpersLib
         {
             get
             {
-                return !isImageLoading && Image != null && Image != pbMain.InitialImage && Image != pbMain.ErrorImage;
+                return !isImageLoading && pbMain.IsValidImage();
             }
         }
 
@@ -150,30 +165,50 @@ namespace ShareX.HelpersLib
         public MyPictureBox()
         {
             InitializeComponent();
-            Text = string.Empty;
-            pbMain.InitialImage = Resources.Loading;
-            pbMain.ErrorImage = Resources.cross;
-            pbMain.LoadProgressChanged += pbMain_LoadProgressChanged;
-            pbMain.LoadCompleted += pbMain_LoadCompleted;
-            pbMain.Resize += pbMain_Resize;
-            pbMain.MouseUp += MyPictureBox_MouseUp;
-            MouseDown += MyPictureBox_MouseDown;
+            Text = "";
+            UpdateTheme();
+            UpdateImageSizeLabel();
         }
 
-        private void pbMain_Resize(object sender, EventArgs e)
+        private void UpdateImageSizeLabel()
         {
-            UpdateCheckers();
-            AutoSetSizeMode();
+            lblImageSize.Location = new Point((ClientSize.Width - lblImageSize.Width) / 2, ClientSize.Height - lblImageSize.Height + 1);
         }
 
-        private void UpdateCheckers()
+        public void UpdateTheme()
+        {
+            if (ShareXResources.UseCustomTheme)
+            {
+                lblImageSize.BackColor = ShareXResources.Theme.BackgroundColor;
+                lblImageSize.ForeColor = ShareXResources.Theme.TextColor;
+
+                ShareXResources.ApplyCustomThemeToContextMenuStrip(cmsMenu);
+            }
+            else
+            {
+                lblImageSize.BackColor = SystemColors.Window;
+                lblImageSize.ForeColor = SystemColors.ControlText;
+            }
+        }
+
+        public void UpdateCheckers(bool forceUpdate = false)
         {
             if (DrawCheckeredBackground)
             {
-                if (pbMain.BackgroundImage == null || pbMain.BackgroundImage.Size != pbMain.ClientSize)
+                if (forceUpdate || pbMain.BackgroundImage == null || pbMain.BackgroundImage.Size != pbMain.ClientSize)
                 {
                     if (pbMain.BackgroundImage != null) pbMain.BackgroundImage.Dispose();
-                    pbMain.BackgroundImage = ImageHelpers.CreateCheckers(8, Color.LightGray, Color.White);
+
+                    if (ShareXResources.Theme.CheckerSize > 0)
+                    {
+                        pbMain.BackgroundImage = ImageHelpers.CreateCheckerPattern(ShareXResources.Theme.CheckerSize, ShareXResources.Theme.CheckerSize,
+                            ShareXResources.Theme.CheckerColor, ShareXResources.Theme.CheckerColor2);
+                    }
+                    else
+                    {
+                        pbMain.BackColor = ShareXResources.Theme.CheckerColor;
+                        pbMain.BackgroundImage = null;
+                    }
                 }
             }
             else
@@ -223,7 +258,7 @@ namespace ShareX.HelpersLib
 
         public void LoadImageFromURLAsync(string url)
         {
-            if (!string.IsNullOrEmpty(url))
+            if (!string.IsNullOrEmpty(url) && !url.StartsWith("ftp://") && !url.StartsWith("ftps://"))
             {
                 LoadImageAsync(url);
             }
@@ -271,25 +306,12 @@ namespace ShareX.HelpersLib
             }
         }
 
-        private void pbMain_LoadCompleted(object sender, AsyncCompletedEventArgs e)
-        {
-            lblStatus.Visible = false;
-            isImageLoading = false;
-            if (e.Error == null) AutoSetSizeMode();
-        }
-
-        private void pbMain_LoadProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-            if (e.ProgressPercentage < 100)
-            {
-                Text = string.Format(Resources.MyPictureBox_pbMain_LoadProgressChanged_Loading_image___0__, e.ProgressPercentage);
-            }
-        }
-
         private void AutoSetSizeMode()
         {
             if (IsValidImage)
             {
+                lblImageSize.Text = $"{Image.Width} x {Image.Height}";
+
                 if (Image.Width > pbMain.ClientSize.Width || Image.Height > pbMain.ClientSize.Height)
                 {
                     pbMain.SizeMode = PictureBoxSizeMode.Zoom;
@@ -304,22 +326,57 @@ namespace ShareX.HelpersLib
                     Cursor = Cursors.Hand;
                 }
             }
+
+            UpdateImageSizeLabel();
         }
 
-        private void MyPictureBox_MouseDown(object sender, MouseEventArgs e)
+        private void PbMain_Resize(object sender, EventArgs e)
         {
-            if (FullscreenOnClick && e.Button == MouseButtons.Left && IsValidImage)
+            UpdateCheckers();
+            AutoSetSizeMode();
+        }
+
+        private void PbMain_LoadCompleted(object sender, AsyncCompletedEventArgs e)
+        {
+            lblStatus.Visible = false;
+            isImageLoading = false;
+            if (e.Error == null) AutoSetSizeMode();
+        }
+
+        private void PbMain_LoadProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            if (isImageLoading && e.ProgressPercentage < 100)
             {
-                ImageViewer.ShowImage(Image);
+                Text = string.Format(Resources.MyPictureBox_pbMain_LoadProgressChanged_Loading_image___0__, e.ProgressPercentage);
             }
         }
 
-        private void MyPictureBox_MouseUp(object sender, MouseEventArgs e)
+        private void PbMain_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (FullscreenOnClick && e.Button == MouseButtons.Left && IsValidImage)
+            {
+                pbMain.Enabled = false;
+                ImageViewer.ShowImage(Image);
+                pbMain.Enabled = true;
+            }
+        }
+
+        private void PbMain_MouseUp(object sender, MouseEventArgs e)
         {
             if (EnableRightClickMenu && e.Button == MouseButtons.Right && IsValidImage)
             {
                 cmsMenu.Show(pbMain, e.X + 1, e.Y + 1);
             }
+        }
+
+        private void PbMain_MouseMove(object sender, MouseEventArgs e)
+        {
+            lblImageSize.Visible = ShowImageSizeLabel && IsValidImage && !new Rectangle(lblImageSize.Location, lblImageSize.Size).Contains(e.Location);
+        }
+
+        private void PbMain_MouseLeave(object sender, EventArgs e)
+        {
+            lblImageSize.Visible = false;
         }
 
         private void tsmiCopyImage_Click(object sender, EventArgs e)

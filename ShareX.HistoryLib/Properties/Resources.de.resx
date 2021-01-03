@@ -1,3 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -116,17 +117,11 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="HistoryForm_HistoryForm_Current_culture___0__" xml:space="preserve">
-    <value>Aktuelle Kultur ({0})</value>
-  </data>
-  <data name="HistoryForm_HistoryForm_History_" xml:space="preserve">
-    <value>Chronik: {0}</value>
-  </data>
   <data name="HistoryForm_UpdateItemCount___Filtered___0_" xml:space="preserve">
     <value>Gefiltert: {0}</value>
   </data>
   <data name="HistoryForm_UpdateItemCount_Total___0_" xml:space="preserve">
-    <value>Total: {0}</value>
+    <value>Gesamt: {0}</value>
   </data>
   <data name="HistoryItemManager_InitializeComponent_Copy" xml:space="preserve">
     <value>Kopieren</value>
@@ -194,22 +189,43 @@
   <data name="HistoryItemManager_InitializeComponent_URL" xml:space="preserve">
     <value>URL</value>
   </data>
-  <data name="HistoryItemManager_UpdateTexts_HTML_link___0__" xml:space="preserve">
-    <value>HTML Link ({0})</value>
+  <data name="HistoryManager_GetHistoryItems_Error" xml:space="preserve">
+    <value>Fehler</value>
   </data>
-  <data name="HistoryItemManager_UpdateTexts_URLs___0__" xml:space="preserve">
-    <value>URLs ({0})</value>
+  <data name="HistoryItemManager_InitializeComponent_Markdown__link" xml:space="preserve">
+    <value>Markdown-Link</value>
   </data>
-  <data name="ObjectListView_ObjectListView_Copy_name" xml:space="preserve">
-    <value>Name kopieren</value>
+  <data name="HistoryItemManager_InitializeComponent_Markdown__image" xml:space="preserve">
+    <value>Markdown-Bild</value>
   </data>
-  <data name="ObjectListView_ObjectListView_Copy_value" xml:space="preserve">
-    <value>Wert kopieren</value>
+  <data name="HistoryItemManager_InitializeComponent_Markdown__linked_image" xml:space="preserve">
+    <value>Markdown verlinktes Bild</value>
   </data>
-  <data name="ObjectListView_ObjectListView_Name" xml:space="preserve">
-    <value>Name</value>
+  <data name="HistoryItemManager_InitializeComponent_UploadFile" xml:space="preserve">
+    <value>Datei hochladen</value>
   </data>
-  <data name="ObjectListView_ObjectListView_Value" xml:space="preserve">
-    <value>Wert</value>
+  <data name="HistoryItemManager_InitializeComponent_EditImage" xml:space="preserve">
+    <value>Bild bearbeiten...</value>
+  </data>
+  <data name="BtnShowStats_ShowStats" xml:space="preserve">
+    <value>Statistiken anzeigen</value>
+  </data>
+  <data name="BtnShowStats_HideStats" xml:space="preserve">
+    <value>Statistiken ausblenden</value>
+  </data>
+  <data name="HistoryItemCounts" xml:space="preserve">
+    <value>Anzahl der Historie-Elemente:</value>
+  </data>
+  <data name="HistoryStats_Total" xml:space="preserve">
+    <value>Insgesamt:</value>
+  </data>
+  <data name="HistoryStats_YearlyUsages" xml:space="preserve">
+    <value>Jährliche Nutzungen:</value>
+  </data>
+  <data name="HistoryStats_FileExtensions" xml:space="preserve">
+    <value>Dateiendungen:</value>
+  </data>
+  <data name="HistoryStats_Hosts" xml:space="preserve">
+    <value>Hosts:</value>
   </data>
 </root>

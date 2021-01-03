@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,6 +24,7 @@
 #endregion License Information (GPL v3)
 
 using ShareX.HelpersLib;
+using ShareX.Properties;
 using ShareX.UploadersLib;
 using System;
 using System.Linq;
@@ -53,13 +54,27 @@ namespace ShareX
                     {
                         if (x != TextDestination.FileUploader)
                         {
-                            AddDestination<TextDestination>((int)x, EDataType.Text, info.TaskSettings);
+                            string overrideText = null;
+
+                            if (x == TextDestination.CustomTextUploader)
+                            {
+                                overrideText = GetCustomUploaderName(Program.UploadersConfig.CustomTextUploaderSelected, info.TaskSettings);
+                            }
+
+                            AddDestination<TextDestination>((int)x, EDataType.Text, info.TaskSettings, overrideText);
                         }
                     });
 
                     Helpers.GetEnums<FileDestination>().ForEach(x =>
                     {
-                        AddDestination<FileDestination>((int)x, EDataType.Text, info.TaskSettings);
+                        string overrideText = null;
+
+                        if (x == FileDestination.CustomFileUploader)
+                        {
+                            overrideText = GetCustomUploaderName(Program.UploadersConfig.CustomFileUploaderSelected, info.TaskSettings);
+                        }
+
+                        AddDestination<FileDestination>((int)x, EDataType.Text, info.TaskSettings, overrideText);
                     });
 
                     flp.Controls.OfType<RadioButton>().ForEach(x =>
@@ -77,7 +92,14 @@ namespace ShareX
                 case EDataType.File:
                     Helpers.GetEnums<FileDestination>().ForEach(x =>
                     {
-                        AddDestination<FileDestination>((int)x, EDataType.File, info.TaskSettings);
+                        string overrideText = null;
+
+                        if (x == FileDestination.CustomFileUploader)
+                        {
+                            overrideText = GetCustomUploaderName(Program.UploadersConfig.CustomFileUploaderSelected, info.TaskSettings);
+                        }
+
+                        AddDestination<FileDestination>((int)x, EDataType.File, info.TaskSettings, overrideText);
                     });
 
                     flp.Controls.OfType<RadioButton>().ForEach(x =>
@@ -88,7 +110,14 @@ namespace ShareX
                 case EDataType.URL:
                     Helpers.GetEnums<UrlShortenerType>().ForEach(x =>
                     {
-                        AddDestination<UrlShortenerType>((int)x, EDataType.URL, info.TaskSettings);
+                        string overrideText = null;
+
+                        if (x == UrlShortenerType.CustomURLShortener)
+                        {
+                            overrideText = GetCustomUploaderName(Program.UploadersConfig.CustomURLShortenerSelected, info.TaskSettings);
+                        }
+
+                        AddDestination<UrlShortenerType>((int)x, EDataType.URL, info.TaskSettings, overrideText);
                     });
 
                     flp.Controls.OfType<RadioButton>().ForEach(x =>
@@ -108,13 +137,27 @@ namespace ShareX
             {
                 if (x != ImageDestination.FileUploader)
                 {
-                    AddDestination<ImageDestination>((int)x, EDataType.Image, taskSettings);
+                    string overrideText = null;
+
+                    if (x == ImageDestination.CustomImageUploader)
+                    {
+                        overrideText = GetCustomUploaderName(Program.UploadersConfig.CustomImageUploaderSelected, taskSettings);
+                    }
+
+                    AddDestination<ImageDestination>((int)x, EDataType.Image, taskSettings, overrideText);
                 }
             });
 
             Helpers.GetEnums<FileDestination>().ForEach(x =>
             {
-                AddDestination<FileDestination>((int)x, EDataType.File, taskSettings);
+                string overrideText = null;
+
+                if (x == FileDestination.CustomFileUploader)
+                {
+                    overrideText = GetCustomUploaderName(Program.UploadersConfig.CustomFileUploaderSelected, taskSettings);
+                }
+
+                AddDestination<FileDestination>((int)x, EDataType.File, taskSettings, overrideText);
             });
 
             flp.Controls.OfType<RadioButton>().ForEach(x =>
@@ -135,7 +178,7 @@ namespace ShareX
             if (InitCompleted != null)
             {
                 RadioButton rbDestination = flp.Controls.OfType<RadioButton>().FirstOrDefault(x => x.Checked);
-                string currentDestination = string.Empty;
+                string currentDestination = "";
                 if (rbDestination != null)
                 {
                     currentDestination = rbDestination.Text;
@@ -144,14 +187,16 @@ namespace ShareX
             }
         }
 
-        private void AddDestination<T>(int index, EDataType dataType, TaskSettings taskSettings)
+        private void AddDestination<T>(int index, EDataType dataType, TaskSettings taskSettings, string overrideText = null)
         {
             Enum destination = (Enum)Enum.ToObject(typeof(T), index);
 
-            if (Program.UploadersConfig.IsValid<T>(index))
+            if (UploadersConfigValidator.Validate<T>(index, Program.UploadersConfig))
             {
                 RadioButton rb = new RadioButton() { AutoSize = true };
-                rb.Text = destination.GetLocalizedDescription();
+
+                rb.Text = string.IsNullOrEmpty(overrideText) ? destination.GetLocalizedDescription() :
+                    string.Format("{0} [{1}]", Resources.BeforeUploadControl_AddDestination_Custom, overrideText);
                 rb.Tag = destination;
                 rb.CheckedChanged += (sender, e) => SetDestinations(rb.Checked, dataType, rb.Tag, taskSettings);
 
@@ -202,6 +247,23 @@ namespace ShareX
                     }
                     break;
             }
+        }
+
+        private string GetCustomUploaderName(int index, TaskSettings taskSettings)
+        {
+            if (taskSettings.OverrideCustomUploader)
+            {
+                index = taskSettings.CustomUploaderIndex.BetweenOrDefault(0, Program.UploadersConfig.CustomUploadersList.Count - 1);
+            }
+
+            CustomUploaderItem cui = Program.UploadersConfig.CustomUploadersList.ReturnIfValidIndex(index);
+
+            if (cui != null)
+            {
+                return cui.ToString();
+            }
+
+            return null;
         }
     }
 }

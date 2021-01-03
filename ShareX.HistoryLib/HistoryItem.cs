@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -29,9 +29,9 @@ namespace ShareX.HistoryLib
 {
     public class HistoryItem
     {
-        public string Filename { get; set; }
-        public string Filepath { get; set; }
-        public DateTime DateTimeUtc { get; set; }
+        public string FileName { get; set; }
+        public string FilePath { get; set; }
+        public DateTime DateTime { get; set; }
         public string Type { get; set; }
         public string Host { get; set; }
         public string URL { get; set; }

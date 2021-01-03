@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,9 +24,7 @@
 #endregion License Information (GPL v3)
 
 using ShareX.HelpersLib;
-using ShareX.UploadersLib.HelperClasses;
 using ShareX.UploadersLib.ImageUploaders;
-using ShareX.UploadersLib.Properties;
 using System;
 using System.Windows.Forms;
 
@@ -40,7 +38,7 @@ namespace ShareX.UploadersLib
             {
                 return txtTweet.Text;
             }
-            private set
+            set
             {
                 txtTweet.Text = value;
             }
@@ -65,7 +63,30 @@ namespace ShareX.UploadersLib
         {
             get
             {
-                return !string.IsNullOrEmpty(Message) && Message.Length <= Length;
+                return Message != null && (MediaMode || Message.Length > 0) && Message.Length <= Length;
+            }
+        }
+
+        private bool mediaMode;
+
+        public bool MediaMode
+        {
+            get
+            {
+                return mediaMode;
+            }
+            set
+            {
+                mediaMode = value;
+
+                if (mediaMode)
+                {
+                    Length = Twitter.MessageMediaLimit;
+                }
+                else
+                {
+                    Length = Twitter.MessageLimit;
+                }
             }
         }
 
@@ -76,18 +97,17 @@ namespace ShareX.UploadersLib
         public TwitterTweetForm()
         {
             InitializeComponent();
-            Icon = Resources.Twitter;
-            Length = Twitter.MessageLimit;
+            ShareXResources.ApplyTheme(this);
+
+            MediaMode = false;
         }
 
-        public TwitterTweetForm(OAuthInfo oauth)
-            : this()
+        public TwitterTweetForm(OAuthInfo oauth) : this()
         {
             AuthInfo = oauth;
         }
 
-        public TwitterTweetForm(OAuthInfo oauth, string message)
-            : this(oauth)
+        public TwitterTweetForm(OAuthInfo oauth, string message) : this(oauth)
         {
             Message = message;
         }
@@ -122,15 +142,15 @@ namespace ShareX.UploadersLib
                 catch (Exception ex)
                 {
                     DebugHelper.WriteException(ex);
-                    MessageBox.Show(ex.ToString(), "ShareX - " + Resources.TwitterTweetForm_SendTweet_Tweet_error, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ex.ShowError();
                 }
             }
         }
 
         private void TwitterMsg_Shown(object sender, EventArgs e)
         {
-            txtTweet.SelectionLength = 0;
-            this.ShowActivate();
+            txtTweet.Select(txtTweet.TextLength, 0);
+            this.ForceActivate();
         }
 
         private void txtTweet_TextChanged(object sender, EventArgs e)

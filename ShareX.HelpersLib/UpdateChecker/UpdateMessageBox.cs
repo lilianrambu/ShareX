@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,58 +24,77 @@
 #endregion License Information (GPL v3)
 
 using ShareX.HelpersLib.Properties;
-using System.Drawing;
-using System.Drawing.Drawing2D;
+using System;
+using System.Text;
 using System.Windows.Forms;
 
 namespace ShareX.HelpersLib
 {
-    public partial class UpdateMessageBox : Form
+    public partial class UpdateMessageBox : BlackStyleForm
     {
         public static bool IsOpen { get; private set; }
+        public static bool DontShow { get; private set; }
 
-        public bool ActivateWindow { get; set; }
+        public bool ActivateWindow { get; private set; }
 
-        private Rectangle fillRect;
+        protected override bool ShowWithoutActivation => !ActivateWindow;
 
-        public UpdateMessageBox()
+        public UpdateMessageBox(bool activateWindow, UpdateChecker updateChecker)
         {
+            ActivateWindow = activateWindow;
             InitializeComponent();
 
-            Icon = ShareXResources.Icon;
-            Text = Resources.UpdateMessageBox_UpdateMessageBox_update_is_available;
-            lblText.Text = string.Format(Resources.UpdateMessageBox_UpdateMessageBox_, Application.ProductName);
+            if (!ActivateWindow)
+            {
+                WindowState = FormWindowState.Minimized;
+                NativeMethods.FlashWindowEx(this, 10);
+            }
 
-            fillRect = new Rectangle(0, 0, ClientSize.Width, ClientSize.Height);
+            Text = Resources.UpdateMessageBox_UpdateMessageBox_update_is_available;
+
+            StringBuilder sbText = new StringBuilder();
+
+            if (updateChecker.IsPortable)
+            {
+                sbText.AppendLine(Helpers.SafeStringFormat(Resources.UpdateMessageBox_UpdateMessageBox_Portable, Application.ProductName));
+            }
+            else
+            {
+                sbText.AppendLine(Helpers.SafeStringFormat(Resources.UpdateMessageBox_UpdateMessageBox_, Application.ProductName));
+            }
+
+            sbText.AppendLine();
+            sbText.Append(Resources.UpdateMessageBox_UpdateMessageBox_CurrentVersion);
+            sbText.Append(": ");
+            sbText.Append(updateChecker.CurrentVersion);
+            if (updateChecker.IsBeta) sbText.Append(" Beta");
+            sbText.AppendLine();
+            sbText.Append(Resources.UpdateMessageBox_UpdateMessageBox_LatestVersion);
+            sbText.Append(": ");
+            sbText.Append(updateChecker.LatestVersion);
+            if (updateChecker is GitHubUpdateChecker githubUpdateChecker && githubUpdateChecker.IsPreRelease) sbText.Append(" (Pre-release)");
+
+            lblText.Text = sbText.ToString();
         }
 
-        public static void Start(UpdateChecker updateChecker, bool activateWindow = true)
+        public static DialogResult Start(UpdateChecker updateChecker, bool activateWindow = true)
         {
+            DialogResult result = DialogResult.None;
+
             if (updateChecker != null && updateChecker.Status == UpdateStatus.UpdateAvailable)
             {
                 IsOpen = true;
 
                 try
                 {
-                    DialogResult result;
-
-                    using (UpdateMessageBox messageBox = new UpdateMessageBox())
+                    using (UpdateMessageBox messageBox = new UpdateMessageBox(activateWindow, updateChecker))
                     {
-                        messageBox.ActivateWindow = activateWindow;
                         result = messageBox.ShowDialog();
                     }
 
                     if (result == DialogResult.Yes)
                     {
-                        using (DownloaderForm updaterForm = new DownloaderForm(updateChecker))
-                        {
-                            updaterForm.ShowDialog();
-
-                            if (updaterForm.Status == DownloaderFormStatus.InstallStarted)
-                            {
-                                Application.Exit();
-                            }
-                        }
+                        updateChecker.DownloadUpdate();
                     }
                 }
                 finally
@@ -83,42 +102,38 @@ namespace ShareX.HelpersLib
                     IsOpen = false;
                 }
             }
+
+            return result;
         }
 
-        protected override bool ShowWithoutActivation
-        {
-            get
-            {
-                return !ActivateWindow;
-            }
-        }
-
-        private void UpdateMessageBox_Shown(object sender, System.EventArgs e)
+        private void UpdateMessageBox_Shown(object sender, EventArgs e)
         {
             if (ActivateWindow)
             {
-                this.ShowActivate();
+                this.ForceActivate();
             }
         }
 
-        private void UpdateMessageBox_Paint(object sender, PaintEventArgs e)
+        private void lblViewChangelog_Click(object sender, EventArgs e)
         {
-            Graphics g = e.Graphics;
+            URLHelpers.OpenURL(Links.URL_CHANGELOG);
+        }
 
-            using (LinearGradientBrush brush = new LinearGradientBrush(fillRect, Color.FromArgb(80, 80, 80), Color.FromArgb(50, 50, 50), LinearGradientMode.Vertical))
-            {
-                g.FillRectangle(brush, fillRect);
-            }
+        private void cbDontShow_CheckedChanged(object sender, EventArgs e)
+        {
+            DontShow = cbDontShow.Checked;
         }
 
         private void btnYes_MouseClick(object sender, MouseEventArgs e)
         {
             DialogResult = DialogResult.Yes;
+            Close();
         }
 
         private void btnNo_MouseClick(object sender, MouseEventArgs e)
         {
             DialogResult = DialogResult.No;
+            Close();
         }
     }
 }

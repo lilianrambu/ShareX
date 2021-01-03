@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright © 2007-2015 ShareX Developers
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -34,10 +34,9 @@ namespace ShareX.HelpersLib
     public class MyListView : ListView
     {
         public delegate void ListViewItemMovedEventHandler(object sender, int oldIndex, int newIndex);
-        public event ListViewItemMovedEventHandler ItemMoved;
 
-        private const int WM_PAINT = 0xF;
-        private const int WM_ERASEBKGND = 0x14;
+        public event ListViewItemMovedEventHandler ItemMoving;
+        public event ListViewItemMovedEventHandler ItemMoved;
 
         [DefaultValue(false)]
         public bool AutoFillColumn { get; set; }
@@ -51,6 +50,34 @@ namespace ShareX.HelpersLib
         // Note: AllowDrag also need to be true.
         [DefaultValue(false)]
         public bool AllowItemDrag { get; set; }
+
+        [DefaultValue(false)]
+        public bool DisableDeselect { get; set; }
+
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public int SelectedIndex
+        {
+            get
+            {
+                if (SelectedIndices.Count > 0)
+                {
+                    return SelectedIndices[0];
+                }
+
+                return -1;
+            }
+            set
+            {
+                UnselectAll();
+
+                if (value > -1)
+                {
+                    ListViewItem lvi = Items[value];
+                    lvi.EnsureVisible();
+                    lvi.Selected = true;
+                }
+            }
+        }
 
         private ListViewColumnSorter lvwColumnSorter;
         private int lineIndex = -1;
@@ -101,17 +128,45 @@ namespace ShareX.HelpersLib
             FillColumn(-1);
         }
 
-        [DebuggerStepThrough]
-        protected override void OnNotifyMessage(Message m)
+        public void Select(int index)
         {
-            if (m.Msg == WM_PAINT && !DesignMode && AutoFillColumn)
+            if (Items.Count > 0 && index > -1 && index < Items.Count)
             {
-                FillColumn(AutoFillColumnIndex);
+                SelectedIndex = index;
             }
+        }
 
-            if (m.Msg != WM_ERASEBKGND)
+        public void SelectLast()
+        {
+            if (Items.Count > 0)
             {
-                base.OnNotifyMessage(m);
+                SelectedIndex = Items.Count - 1;
+            }
+        }
+
+        public void SelectSingle(ListViewItem lvi)
+        {
+            UnselectAll();
+
+            if (lvi != null)
+            {
+                lvi.Selected = true;
+            }
+        }
+
+        public void UnselectAll()
+        {
+            if (MultiSelect)
+            {
+                SelectedItems.Clear();
+            }
+        }
+
+        public void EnsureSelectedVisible()
+        {
+            if (SelectedItems.Count > 0)
+            {
+                SelectedItems[0].EnsureVisible();
             }
         }
 
@@ -128,11 +183,37 @@ namespace ShareX.HelpersLib
             base.OnKeyDown(e);
         }
 
+        [DebuggerStepThrough]
         protected override void WndProc(ref Message m)
         {
+            if (AutoFillColumn && m.Msg == (int)WindowsMessages.PAINT && !DesignMode)
+            {
+                FillColumn(AutoFillColumnIndex);
+            }
+
+            if (m.Msg == (int)WindowsMessages.ERASEBKGND)
+            {
+                return;
+            }
+
+            if (DisableDeselect && m.Msg >= (int)WindowsMessages.LBUTTONDOWN && m.Msg <= (int)WindowsMessages.MBUTTONDBLCLK)
+            {
+                Point pos = new Point(m.LParam.ToInt32() & 0xffff, m.LParam.ToInt32() >> 16);
+                ListViewHitTestInfo hit = HitTest(pos);
+                switch (hit.Location)
+                {
+                    case ListViewHitTestLocations.AboveClientArea:
+                    case ListViewHitTestLocations.BelowClientArea:
+                    case ListViewHitTestLocations.LeftOfClientArea:
+                    case ListViewHitTestLocations.RightOfClientArea:
+                    case ListViewHitTestLocations.None:
+                        return;
+                }
+            }
+
             base.WndProc(ref m);
 
-            if (m.Msg == WM_PAINT && lineIndex >= 0)
+            if (m.Msg == (int)WindowsMessages.PAINT && lineIndex >= 0)
             {
                 Rectangle rc = Items[lineIndex < Items.Count ? lineIndex : lineIndex - 1].GetBounds(ItemBoundsPortion.Entire);
                 DrawInsertionLine(rc.Left, rc.Right, lineIndex < Items.Count ? rc.Top : rc.Bottom);
@@ -205,6 +286,8 @@ namespace ShareX.HelpersLib
                     newIndex = Items.Count - 1;
                 }
 
+                OnItemMoving(oldIndex, newIndex);
+
                 Items.RemoveAt(oldIndex);
                 Items.Insert(newIndex, lvi);
 
@@ -215,12 +298,14 @@ namespace ShareX.HelpersLib
             Invalidate();
         }
 
+        protected void OnItemMoving(int oldIndex, int newIndex)
+        {
+            ItemMoving?.Invoke(this, oldIndex, newIndex);
+        }
+
         protected void OnItemMoved(int oldIndex, int newIndex)
         {
-            if (ItemMoved != null)
-            {
-                ItemMoved(this, oldIndex, newIndex);
-            }
+            ItemMoved?.Invoke(this, oldIndex, newIndex);
         }
 
         protected override void OnDragLeave(EventArgs e)
@@ -254,7 +339,12 @@ namespace ShareX.HelpersLib
                     lvwColumnSorter.Order = SortOrder.Ascending;
                 }
 
+                // If the column is tagged as a DateTime, then sort by date
+                lvwColumnSorter.SortByDate = Columns[e.Column].Tag is DateTime;
+
+                Cursor.Current = Cursors.WaitCursor;
                 Sort();
+                Cursor.Current = Cursors.Default;
             }
         }
 
@@ -269,6 +359,16 @@ namespace ShareX.HelpersLib
 
                 Point[] rightTriangle = new Point[] { new Point(right, y - 4), new Point(right - 8, y), new Point(right, y + 4) };
                 g.FillPolygon(SystemBrushes.HotTrack, rightTriangle);
+            }
+        }
+
+        protected override void ScaleControl(SizeF factor, BoundsSpecified specified)
+        {
+            base.ScaleControl(factor, specified);
+
+            foreach (ColumnHeader column in Columns)
+            {
+                column.Width = (int)Math.Round(column.Width * factor.Width);
             }
         }
     }

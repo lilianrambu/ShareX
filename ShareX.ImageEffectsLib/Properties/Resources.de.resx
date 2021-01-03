@@ -1,3 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -117,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ImageEffectsForm_AddAllEffectsToTreeView_Adjustments" xml:space="preserve">
-    <value>Regulierungen</value>
+    <value>Anpassungen</value>
   </data>
   <data name="ImageEffectsForm_AddAllEffectsToTreeView_Drawings" xml:space="preserve">
     <value>Zeichnungen</value>
@@ -129,6 +130,9 @@
     <value>Manipulationen</value>
   </data>
   <data name="ImageEffectsForm_UpdatePreview_Image_effects___Width___0___Height___1___Render_time___2__ms" xml:space="preserve">
-    <value>Bildefekte - Weite: {0}, Höhe {1}, Renderzeit {2} ms</value>
+    <value>Bildeffekte - Breite: {0}, Höhe: {1}, Renderzeit: {2} ms</value>
+  </data>
+  <data name="ImageEffectsForm_EditorMode_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
   </data>
 </root>
